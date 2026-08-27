@@ -1,24 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { MapHeader } from "@/components/map/map-header"
 import { MapTabs, type MapTab } from "@/components/map/map-tabs"
 import { ForecastMapWrapper } from "@/components/map/forecast-map-wrapper"
 import { ForecastChart } from "@/components/map/forecast-chart"
 import { ForecastPanel } from "@/components/map/forecast-panel"
+import { useStore } from "@/lib/store"
 
 export default function MapaPage() {
   const [tab, setTab] = useState<MapTab>("MAPA")
+  const { state } = useStore()
+
+  const rondas = state.rondas
+    .filter((r) => r.sectorId === state.sectorActivoId)
+    .sort((a, b) => a.inicio.localeCompare(b.inicio))
+
+  const [rondaId, setRondaId] = useState(
+    () => rondas[rondas.length - 1]?.id ?? ""
+  )
+  const [zonaFiltro, setZonaFiltro] = useState("todos")
+
+  useEffect(() => {
+    setRondaId(rondas[rondas.length - 1]?.id ?? "")
+    setZonaFiltro("todos")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.sectorActivoId])
 
   return (
     <div className="flex min-h-screen bg-background">
       <AppSidebar active="Mapa" />
 
       <main className="flex flex-1 flex-col overflow-hidden">
-        <MapHeader />
+        <MapHeader
+          zonaFiltro={zonaFiltro}
+          onZonaChange={setZonaFiltro}
+          rondaId={rondaId}
+          onRondaChange={setRondaId}
+        />
 
-        <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_360px]">
+        <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <section
             aria-label={tab === "MAPA" ? "Mapa de pronóstico" : "Gráfico de pronóstico"}
             className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
@@ -33,7 +55,7 @@ export default function MapaPage() {
             aria-label="Detalle de pronóstico"
             className="min-h-[520px] overflow-hidden rounded-xl border border-border bg-card py-3 shadow-sm"
           >
-            <ForecastPanel />
+            <ForecastPanel rondaId={rondaId} zonaFiltro={zonaFiltro} />
           </aside>
         </div>
       </main>

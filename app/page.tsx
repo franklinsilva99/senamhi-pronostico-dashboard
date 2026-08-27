@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { DateRange } from "@/components/date-range"
 import { ForecastCalendar } from "@/components/forecast-calendar"
+import { RangoBadge } from "@/components/rango-badge"
 import { SectorTabs } from "@/components/sector-tabs"
 import { ZonesAccordion } from "@/components/zones-accordion"
 
@@ -19,9 +20,7 @@ export default function Page() {
               Gestión de sectores, zonas y estados de pronóstico
             </p>
           </div>
-          <span className="rounded-full bg-forecast/15 px-3 py-1 text-xs font-semibold text-forecast-foreground">
-            Semana activa · 22–28 Ago 2026
-          </span>
+          <RangoBadge />
         </header>
 
         <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
