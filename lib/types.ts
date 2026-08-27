@@ -31,6 +31,7 @@ export interface DiaPronostico {
   tMin: number
   tMax: number
   descripcion: string
+  icono?: string
 }
 
 export interface Ronda {

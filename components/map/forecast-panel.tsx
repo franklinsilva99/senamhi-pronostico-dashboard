@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { HOY } from "@/lib/seed"
 import { fmtCortoConDia, fmtRangoConAnio, rangoFechas } from "@/lib/fechas"
+import { ICONOS, iconoSrc } from "@/lib/iconos"
 import { generarId } from "@/lib/utils"
 import type { Pronostico, Ronda, Zona } from "@/lib/types"
 
@@ -23,23 +24,29 @@ function ZonaEditor({
 }) {
   const fechas = rangoFechas(ronda.inicio, ronda.fin)
   const [valores, setValores] = useState<
-    Record<string, { min: string; max: string; desc: string }>
+    Record<string, { min: string; max: string; desc: string; icono: string }>
   >(() => {
-    const init: Record<string, { min: string; max: string; desc: string }> = {}
+    const init: Record<
+      string,
+      { min: string; max: string; desc: string; icono: string }
+    > = {}
     for (const f of fechas) {
       const d = existente?.dias.find((x) => x.fecha === f)
       init[f] = {
         min: d ? String(d.tMin) : "",
         max: d ? String(d.tMax) : "",
         desc: d?.descripcion ?? "",
+        icono: d?.icono ?? "",
       }
     }
     return init
   })
 
+  const [pickerAbierto, setPickerAbierto] = useState<string | null>(null)
+
   const setCampo = (
     fecha: string,
-    campo: "min" | "max" | "desc",
+    campo: "min" | "max" | "desc" | "icono",
     valor: string
   ) => {
     setValores((v) => ({
@@ -60,6 +67,7 @@ function ZonaEditor({
         tMin: Number(valores[fecha]?.min) || 0,
         tMax: Number(valores[fecha]?.max) || 0,
         descripcion: valores[fecha]?.desc ?? "",
+        icono: valores[fecha]?.icono || undefined,
       })),
       fechaCreacion: existente?.fechaCreacion ?? HOY,
     })
@@ -93,34 +101,86 @@ function ZonaEditor({
       </div>
 
       {fechas.map((fecha) => (
-        <div key={fecha} className="flex items-center gap-2 px-4 py-1.5">
-          <span className="w-20 shrink-0 text-[11px] text-muted-foreground">
-            {fmtCortoConDia(fecha)}
-          </span>
-          <input
-            type="number"
-            value={valores[fecha]?.max ?? ""}
-            onChange={(e) => setCampo(fecha, "max", e.target.value)}
-            placeholder="Máx"
-            aria-label={`Temperatura máxima ${fecha}`}
-            className="h-6 w-12 shrink-0 rounded border border-input bg-card text-center text-[11px] text-foreground outline-none focus:border-ring"
-          />
-          <input
-            type="number"
-            value={valores[fecha]?.min ?? ""}
-            onChange={(e) => setCampo(fecha, "min", e.target.value)}
-            placeholder="Mín"
-            aria-label={`Temperatura mínima ${fecha}`}
-            className="h-6 w-12 shrink-0 rounded border border-input bg-card text-center text-[11px] text-foreground outline-none focus:border-ring"
-          />
-          <input
-            type="text"
-            value={valores[fecha]?.desc ?? ""}
-            onChange={(e) => setCampo(fecha, "desc", e.target.value)}
-            placeholder="Descripción del pronóstico…"
-            aria-label={`Descripción ${fecha}`}
-            className="h-6 min-w-0 flex-1 rounded border border-input bg-card px-2.5 text-[11px] text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
-          />
+        <div key={fecha}>
+          <div className="flex items-center gap-2 px-4 py-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                setPickerAbierto((p) => (p === fecha ? null : fecha))
+              }
+              aria-label={`Elegir icono para ${fecha}`}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-input bg-card text-muted-foreground transition-colors hover:bg-accent"
+            >
+              {valores[fecha]?.icono ? (
+                <img
+                  src={iconoSrc(valores[fecha].icono)}
+                  alt={valores[fecha].icono}
+                  className="h-5 w-5 object-contain"
+                />
+              ) : (
+                <span className="text-[11px] font-semibold leading-none">+</span>
+              )}
+            </button>
+
+            <span className="w-20 shrink-0 text-[11px] text-muted-foreground">
+              {fmtCortoConDia(fecha)}
+            </span>
+            <input
+              type="number"
+              value={valores[fecha]?.max ?? ""}
+              onChange={(e) => setCampo(fecha, "max", e.target.value)}
+              placeholder="Máx"
+              aria-label={`Temperatura máxima ${fecha}`}
+              className="h-6 w-12 shrink-0 rounded border border-input bg-card text-center text-[11px] text-foreground outline-none focus:border-ring"
+            />
+            <input
+              type="number"
+              value={valores[fecha]?.min ?? ""}
+              onChange={(e) => setCampo(fecha, "min", e.target.value)}
+              placeholder="Mín"
+              aria-label={`Temperatura mínima ${fecha}`}
+              className="h-6 w-12 shrink-0 rounded border border-input bg-card text-center text-[11px] text-foreground outline-none focus:border-ring"
+            />
+            <input
+              type="text"
+              value={valores[fecha]?.desc ?? ""}
+              onChange={(e) => setCampo(fecha, "desc", e.target.value)}
+              placeholder="Descripción del pronóstico…"
+              aria-label={`Descripción ${fecha}`}
+              className="h-6 min-w-0 flex-1 rounded border border-input bg-card px-2.5 text-[11px] text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+            />
+          </div>
+
+          {pickerAbierto === fecha && (
+            <div className="border-t border-border/70 bg-muted/20 px-4 py-2">
+              <div className="grid grid-cols-8 gap-1">
+                {ICONOS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setCampo(fecha, "icono", id)
+                      setPickerAbierto(null)
+                    }}
+                    className={`flex flex-col items-center gap-0.5 rounded-md border p-1 transition-colors ${
+                      valores[fecha]?.icono === id
+                        ? "border-primary bg-primary/10"
+                        : "border-transparent hover:border-border hover:bg-card"
+                    }`}
+                  >
+                    <img
+                      src={iconoSrc(id)}
+                      alt={id}
+                      className="h-7 w-7 object-contain"
+                    />
+                    <span className="text-[8px] leading-none text-muted-foreground">
+                      {id}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -160,6 +220,7 @@ export function ForecastPanel({
       </div>
 
       <div className="flex items-center gap-2 border-b border-border px-4 py-1.5">
+        <span className="w-6 shrink-0" />
         <span className="w-20 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Fecha
         </span>
