@@ -11,6 +11,20 @@ const ForecastMap = dynamic(() => import("./forecast-map"), {
   ),
 })
 
-export function ForecastMapWrapper() {
-  return <ForecastMap />
+export function ForecastMapWrapper({
+  rondaId,
+  zonaFiltro,
+  onZonaChange,
+}: {
+  rondaId: string
+  zonaFiltro: string
+  onZonaChange: (id: string) => void
+}) {
+  return (
+    <ForecastMap
+      rondaId={rondaId}
+      zonaFiltro={zonaFiltro}
+      onZonaChange={onZonaChange}
+    />
+  )
 }

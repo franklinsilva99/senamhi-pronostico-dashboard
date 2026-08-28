@@ -46,8 +46,16 @@ export default function MapaPage() {
             className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
           >
             <MapTabs active={tab} onChange={setTab} />
-            <div className="relative flex-1">
-              {tab === "MAPA" ? <ForecastMapWrapper /> : <ForecastChart />}
+            <div className="relative flex-1 min-h-0">
+              {tab === "MAPA" ? (
+                <ForecastMapWrapper
+                  rondaId={rondaId}
+                  zonaFiltro={zonaFiltro}
+                  onZonaChange={setZonaFiltro}
+                />
+              ) : (
+                <ForecastChart />
+              )}
             </div>
           </section>
 

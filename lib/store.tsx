@@ -20,7 +20,7 @@ type Action =
   | { type: "eliminarRonda"; id: string }
   | { type: "setRango"; rango: RangoFechas }
 
-const STORAGE_KEY = "senamhi.pronostico.v5"
+const STORAGE_KEY = "senamhi.pronostico.v6"
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {

@@ -10,6 +10,7 @@ export interface Zona {
   id: string
   nombre: string
   sectorId: string
+  ubigeo?: string
 }
 
 export interface Estacion {
