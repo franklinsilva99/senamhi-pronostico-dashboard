@@ -27,6 +27,12 @@ export interface Estacion {
   zonaId: string
 }
 
+export interface MedicionDiaria {
+  fecha: string
+  tMax: number
+  tMin: number
+}
+
 export interface DiaPronostico {
   fecha: string
   tMin: number

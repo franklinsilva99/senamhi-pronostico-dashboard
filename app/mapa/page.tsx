@@ -54,7 +54,7 @@ export default function MapaPage() {
                   onZonaChange={setZonaFiltro}
                 />
               ) : (
-                <ForecastChart />
+                <ForecastChart zonaFiltro={zonaFiltro} />
               )}
             </div>
           </section>

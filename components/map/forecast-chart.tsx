@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment } from "react"
+import { useStore } from "@/lib/store"
+import { historicoDeEstacion, ultimos7Dias } from "@/lib/historico"
+import { fmtCortoConDia } from "@/lib/fechas"
 import {
   ResponsiveContainer,
   ComposedChart,
-  Area,
   Line,
   XAxis,
   YAxis,
@@ -13,48 +15,22 @@ import {
   Legend,
 } from "recharts"
 
-type ZoneKey = "Angamos" | "Lagunas" | "Santa Clotilde"
+const PALETA = [
+  "#2563eb",
+  "#dc2626",
+  "#16a34a",
+  "#d97706",
+  "#7c3aed",
+  "#0891b2",
+  "#db2777",
+  "#65a30d",
+  "#ca8a04",
+  "#0f766e",
+]
 
-const zones: ZoneKey[] = ["Angamos", "Lagunas", "Santa Clotilde"]
-
-const dataByZone: Record<ZoneKey, { day: string; max: number; min: number }[]> = {
-  Angamos: [
-    { day: "Sáb 25", max: 25, min: 16 },
-    { day: "Dom 26", max: 24, min: 15 },
-    { day: "Lun 27", max: 26, min: 17 },
-    { day: "Mar 28", max: 23, min: 14 },
-    { day: "Mié 29", max: 25, min: 16 },
-    { day: "Jue 30", max: 27, min: 18 },
-    { day: "Vie 31", max: 26, min: 17 },
-  ],
-  Lagunas: [
-    { day: "Sáb 25", max: 18, min: 8 },
-    { day: "Dom 26", max: 17, min: 7 },
-    { day: "Lun 27", max: 19, min: 9 },
-    { day: "Mar 28", max: 16, min: 6 },
-    { day: "Mié 29", max: 18, min: 8 },
-    { day: "Jue 30", max: 20, min: 10 },
-    { day: "Vie 31", max: 19, min: 9 },
-  ],
-  "Santa Clotilde": [
-    { day: "Sáb 25", max: 31, min: 22 },
-    { day: "Dom 26", max: 30, min: 21 },
-    { day: "Lun 27", max: 32, min: 23 },
-    { day: "Mar 28", max: 29, min: 20 },
-    { day: "Mié 29", max: 31, min: 22 },
-    { day: "Jue 30", max: 33, min: 24 },
-    { day: "Vie 31", max: 32, min: 23 },
-  ],
-}
-
-const stats = (rows: { max: number; min: number }[]) => {
-  const maxes = rows.map((r) => r.max)
-  const mins = rows.map((r) => r.min)
-  return {
-    peak: Math.max(...maxes),
-    low: Math.min(...mins),
-    avg: Math.round(rows.reduce((s, r) => s + (r.max + r.min) / 2, 0) / rows.length),
-  }
+type Fila = {
+  day: string
+  [key: string]: string | number
 }
 
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "warm" | "cool" | "neutral" }) {
@@ -72,56 +48,77 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone: 
   )
 }
 
-export function ForecastChart() {
-  const [zone, setZone] = useState<ZoneKey>("Angamos")
-  const data = dataByZone[zone]
-  const s = stats(data)
+export function ForecastChart({ zonaFiltro }: { zonaFiltro: string }) {
+  const { state } = useStore()
+
+  const zona = state.zonas.find((z) => z.id === zonaFiltro)
+  const estaciones = state.estaciones.filter((e) => e.zonaId === zonaFiltro)
+
+  if (!zona || zonaFiltro === "todos") {
+    return (
+      <div className="flex h-full items-center justify-center p-4 text-center text-xs italic text-muted-foreground">
+        Selecciona una zona para ver la comparativa histórica de sus estaciones.
+      </div>
+    )
+  }
+
+  if (estaciones.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-4 text-center text-xs italic text-muted-foreground">
+        Esta zona no tiene estaciones meteorológicas.
+      </div>
+    )
+  }
+
+  const series = estaciones.map((e) => ({
+    estacion: e,
+    dias: ultimos7Dias(historicoDeEstacion(e.id)),
+  }))
+
+  const dias = series[0].dias.map((d) => d.fecha)
+
+  const data: Fila[] = dias.map((fecha, i) => {
+    const fila: Fila = { day: fmtCortoConDia(fecha) }
+    for (const { estacion, dias: ds } of series) {
+      fila[`max_${estacion.id}`] = ds[i].tMax
+      fila[`min_${estacion.id}`] = ds[i].tMin
+    }
+    return fila
+  })
+
+  const todosMax = series.flatMap((s) => s.dias.map((d) => d.tMax))
+  const todosMin = series.flatMap((s) => s.dias.map((d) => d.tMin))
+  const stats = {
+    peak: Math.max(...todosMax),
+    low: Math.min(...todosMin),
+    avg: Math.round(
+      series
+        .flatMap((s) => s.dias)
+        .reduce((sum, d) => sum + (d.tMax + d.tMin) / 2, 0) /
+        (series.reduce((n, s) => n + s.dias.length, 0) || 1)
+    ),
+  }
 
   return (
     <div className="flex h-full flex-col gap-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-bold text-foreground">Evolución de temperatura</h2>
-          <p className="text-xs text-muted-foreground">Máximas y mínimas pronosticadas por día</p>
-        </div>
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
-          {zones.map((z) => (
-            <button
-              key={z}
-              type="button"
-              onClick={() => setZone(z)}
-              aria-current={zone === z ? "true" : undefined}
-              className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-colors ${
-                zone === z
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {z}
-            </button>
-          ))}
-        </div>
+      <div>
+        <h2 className="text-sm font-bold text-foreground">
+          Comparativa histórica · {zona.nombre}
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Temperaturas máximas y mínimas registradas por las estaciones (últimos 7 días)
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Máx. pico" value={`${s.peak}°`} tone="warm" />
-        <StatCard label="Mín. absoluta" value={`${s.low}°`} tone="cool" />
-        <StatCard label="Promedio" value={`${s.avg}°`} tone="neutral" />
+        <StatCard label="Máx. pico" value={`${stats.peak}°`} tone="warm" />
+        <StatCard label="Mín. absoluta" value={`${stats.low}°`} tone="cool" />
+        <StatCard label="Promedio" value={`${stats.avg}°`} tone="neutral" />
       </div>
 
       <div className="min-h-0 flex-1 rounded-lg border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%" minHeight={280}>
           <ComposedChart data={data} margin={{ top: 12, right: 12, bottom: 4, left: -12 }}>
-            <defs>
-              <linearGradient id="fillMax" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--process)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="var(--process)" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="fillMin" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="day"
@@ -145,31 +142,38 @@ export function ForecastChart() {
                 color: "var(--foreground)",
               }}
               labelStyle={{ fontWeight: 700, color: "var(--foreground)" }}
-              formatter={(value: number, name) => [`${value}°C`, name === "max" ? "Máxima" : "Mínima"]}
+              formatter={(value, name) => [
+                `${typeof value === "number" ? value : ""}°C`,
+                String(name ?? ""),
+              ]}
             />
-            <Legend
-              iconType="plainline"
-              wrapperStyle={{ fontSize: 11 }}
-              formatter={(value) => (value === "max" ? "Máxima" : "Mínima")}
-            />
-            <Area type="monotone" dataKey="max" stroke="none" fill="url(#fillMax)" />
-            <Area type="monotone" dataKey="min" stroke="none" fill="url(#fillMin)" />
-            <Line
-              type="monotone"
-              dataKey="max"
-              stroke="var(--process)"
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: "var(--process)" }}
-              activeDot={{ r: 5 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="min"
-              stroke="var(--primary)"
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: "var(--primary)" }}
-              activeDot={{ r: 5 }}
-            />
+            <Legend iconType="plainline" wrapperStyle={{ fontSize: 11 }} />
+            {series.map(({ estacion }, idx) => {
+              const color = PALETA[idx % PALETA.length]
+              return (
+                <Fragment key={estacion.id}>
+                  <Line
+                    type="monotone"
+                    dataKey={`max_${estacion.id}`}
+                    name={`${estacion.nombre} · Máx`}
+                    stroke={color}
+                    strokeWidth={2.5}
+                    dot={{ r: 3, fill: color }}
+                    activeDot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={`min_${estacion.id}`}
+                    name={`${estacion.nombre} · Mín`}
+                    stroke={color}
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    dot={{ r: 2.5, fill: color }}
+                    activeDot={{ r: 4 }}
+                  />
+                </Fragment>
+              )
+            })}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
