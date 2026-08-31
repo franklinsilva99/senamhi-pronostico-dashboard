@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Globe } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DateRange } from "@/components/date-range"
 import { ForecastCalendar } from "@/components/forecast-calendar"
@@ -61,7 +62,18 @@ export default function Page() {
               Gestión de sectores, zonas y estados de pronóstico
             </p>
           </div>
-          <RangoBadge />
+          <div className="flex items-center gap-3">
+            <a
+              href="/publico"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              <Globe className="h-4 w-4" aria-hidden="true" />
+              Ver público
+            </a>
+            <RangoBadge />
+          </div>
         </header>
 
         <nav className="flex items-end gap-1 border-b border-border bg-card px-8">

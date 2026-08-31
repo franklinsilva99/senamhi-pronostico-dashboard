@@ -67,6 +67,21 @@ export function fmtDDMMYYYY(iso: string): string {
   return `${d}/${m}/${y}`
 }
 
+export function fmtFechaISO(iso: string): string {
+  if (!iso) return "—"
+  const [fecha] = iso.split("T")
+  const [y, m, d] = fecha.split("-")
+  return `${d}/${m}/${y}`
+}
+
+export function fmtDateTimeISO(iso: string): string {
+  if (!iso) return "—"
+  const [fecha, hora] = iso.split("T")
+  const [y, m, d] = fecha.split("-")
+  const hhmm = (hora ?? "00:00").slice(0, 5)
+  return `${d}/${m}/${y} ${hhmm}`
+}
+
 export function fmtRangoLargo(inicio: string, fin: string): string {
   return `${nombreDiaLargo(inicio)} – ${nombreDiaLargo(fin)}`
 }

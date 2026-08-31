@@ -1,5 +1,6 @@
 import type {
   AppState,
+  Aviso,
   DiaPronostico,
   Estacion,
   Pronostico,
@@ -97,8 +98,8 @@ const estaciones: Estacion[] = [
 ]
 
 const rondas: Ronda[] = [
-  { id: "ronda-1", sectorId: "sector-loreto", inicio: "2026-08-22", fin: "2026-08-24", fechaCreacion: "2026-08-20" },
-  { id: "ronda-2", sectorId: "sector-loreto", inicio: "2026-08-25", fin: "2026-08-27", fechaCreacion: "2026-08-26" },
+  { id: "ronda-1", sectorId: "sector-loreto", inicio: "2026-08-22", fin: "2026-08-24", fechaCreacion: "2026-08-20", estado: "Publicado" },
+  { id: "ronda-2", sectorId: "sector-loreto", inicio: "2026-08-25", fin: "2026-08-27", fechaCreacion: "2026-08-26", estado: "Cargado" },
 ]
 
 function generarDias(
@@ -157,7 +158,52 @@ export function seedState(): AppState {
     estaciones,
     rondas,
     pronosticos,
+    avisos: avisosSeed,
     sectorActivoId: "sector-loreto",
     rango: { ...SEMANA_ACTIVA },
   }
 }
+
+const avisosSeed: Aviso[] = [
+  {
+    id: "aviso-1",
+    codigo: "230-2026-SENAMHI/DMA/SPM",
+    titulo: "AVISO DE CORTO PLAZO ANTE LLUVIAS INTENSAS",
+    evento: "LLUVIAS INTENSAS",
+    sede: "DZ 08",
+    responsable: "Dirección de Meteorología",
+    fecha_emision: "2026-08-26T10:00",
+    valido_desde: "2026-08-26T10:00",
+    valido_hasta: "2026-08-29T23:59",
+    proxima_actualizacion: "2026-08-27T10:00",
+    departamentos_alertados: "LORETO, UCAYALI, HUÁNUCO, PASCO",
+    estado: "Publicado",
+    mapa_url: "",
+    perspectivas: {
+      SELVA:
+        "Lluvias intensas durante el día, con descargas eléctricas y ráfagas de viento.",
+      SIERRA: "Cielo nublado con llovizna ligera por la tarde.",
+      COSTA: "Cielo nublado parcial con brillo solar.",
+    },
+    detalles: {
+      SELVA: {
+        tipo_precipitacion: "Lluvia intensa",
+        max_cantidad_pp: "60",
+        probabilidad: "A",
+        fenomenos_asociados: "Descargas eléctricas, ráfagas de viento",
+      },
+      SIERRA: {
+        tipo_precipitacion: "Llovizna",
+        max_cantidad_pp: "10",
+        probabilidad: "M",
+        fenomenos_asociados: "Neblina",
+      },
+      COSTA: {
+        tipo_precipitacion: "Ninguna",
+        max_cantidad_pp: "0",
+        probabilidad: "M",
+        fenomenos_asociados: "Brillo solar",
+      },
+    },
+  },
+]

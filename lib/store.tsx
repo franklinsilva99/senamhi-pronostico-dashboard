@@ -8,7 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { AppState, Pronostico, RangoFechas, Ronda } from "@/lib/types"
+import type {
+  AppState,
+  Aviso,
+  EstadoPublicacion,
+  Pronostico,
+  RangoFechas,
+  Ronda,
+} from "@/lib/types"
 import { seedState } from "@/lib/seed"
 
 type Action =
@@ -19,13 +26,25 @@ type Action =
   | { type: "crearRonda"; ronda: Ronda }
   | { type: "eliminarRonda"; id: string }
   | { type: "setRango"; rango: RangoFechas }
+  | { type: "guardarAviso"; aviso: Aviso }
+  | { type: "eliminarAviso"; id: string }
+  | { type: "setEstadoRonda"; id: string; estado: EstadoPublicacion }
 
 const STORAGE_KEY = "senamhi.pronostico.v6"
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "hydrate":
-      return action.state
+      return {
+        ...action.state,
+        rondas: (action.state.rondas ?? []).map((r) => ({
+          ...r,
+          estado: r.estado ?? "Cargado",
+        })),
+        avisos: Array.isArray(action.state.avisos)
+          ? action.state.avisos
+          : seedState().avisos,
+      }
     case "seleccionarSector":
       return { ...state, sectorActivoId: action.sectorId }
     case "guardarPronostico": {
@@ -52,6 +71,25 @@ function reducer(state: AppState, action: Action): AppState {
       }
     case "setRango":
       return { ...state, rango: action.rango }
+    case "guardarAviso": {
+      const existe = state.avisos.some((a) => a.id === action.aviso.id)
+      const avisos = existe
+        ? state.avisos.map((a) => (a.id === action.aviso.id ? action.aviso : a))
+        : [...state.avisos, action.aviso]
+      return { ...state, avisos }
+    }
+    case "eliminarAviso":
+      return {
+        ...state,
+        avisos: state.avisos.filter((a) => a.id !== action.id),
+      }
+    case "setEstadoRonda":
+      return {
+        ...state,
+        rondas: state.rondas.map((r) =>
+          r.id === action.id ? { ...r, estado: action.estado } : r
+        ),
+      }
     default:
       return state
   }
@@ -65,6 +103,9 @@ interface StoreValue {
   crearRonda: (ronda: Ronda) => void
   eliminarRonda: (id: string) => void
   setRango: (rango: RangoFechas) => void
+  guardarAviso: (aviso: Aviso) => void
+  eliminarAviso: (id: string) => void
+  setEstadoRonda: (id: string, estado: EstadoPublicacion) => void
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -101,6 +142,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     crearRonda: (ronda) => dispatch({ type: "crearRonda", ronda }),
     eliminarRonda: (id) => dispatch({ type: "eliminarRonda", id }),
     setRango: (rango) => dispatch({ type: "setRango", rango }),
+    guardarAviso: (aviso) => dispatch({ type: "guardarAviso", aviso }),
+    eliminarAviso: (id) => dispatch({ type: "eliminarAviso", id }),
+    setEstadoRonda: (id, estado) =>
+      dispatch({ type: "setEstadoRonda", id, estado }),
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

@@ -41,12 +41,15 @@ export interface DiaPronostico {
   icono?: string
 }
 
+export type EstadoPublicacion = "Cargado" | "Publicado"
+
 export interface Ronda {
   id: string
   sectorId: string
   inicio: string
   fin: string
   fechaCreacion: string
+  estado: EstadoPublicacion
 }
 
 export interface Pronostico {
@@ -66,12 +69,42 @@ export interface RangoFechas {
   fin: string
 }
 
+export type RegionAviso = "SELVA" | "SIERRA" | "COSTA"
+export type EstadoAviso = EstadoPublicacion
+export type ProbabilidadAviso = "A" | "M"
+
+export interface DetalleAviso {
+  tipo_precipitacion: string
+  max_cantidad_pp: string
+  probabilidad: ProbabilidadAviso
+  fenomenos_asociados: string
+}
+
+export interface Aviso {
+  id: string
+  codigo: string
+  titulo: string
+  evento: string
+  sede: string
+  responsable: string
+  fecha_emision: string
+  valido_desde: string
+  valido_hasta: string
+  proxima_actualizacion: string
+  departamentos_alertados: string
+  estado: EstadoAviso
+  mapa_url: string
+  perspectivas: Record<RegionAviso, string>
+  detalles: Record<RegionAviso, DetalleAviso>
+}
+
 export interface AppState {
   sectores: Sector[]
   zonas: Zona[]
   estaciones: Estacion[]
   rondas: Ronda[]
   pronosticos: Pronostico[]
+  avisos: Aviso[]
   sectorActivoId: string
   rango: RangoFechas
 }

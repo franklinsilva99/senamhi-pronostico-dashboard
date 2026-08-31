@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { EyeOff, Pencil, Plus, Trash2, Upload } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { HOY } from "@/lib/seed"
 import {
@@ -42,7 +42,8 @@ export function ForecastCalendar({
 }: {
   onEditar: (rondaId: string) => void
 }) {
-  const { state, crearRonda, setRango, eliminarRonda } = useStore()
+  const { state, crearRonda, setRango, eliminarRonda, setEstadoRonda } =
+    useStore()
   const { rango } = state
 
   const [creando, setCreando] = useState(false)
@@ -89,6 +90,7 @@ export function ForecastCalendar({
       inicio: nuevaInicio,
       fin: nuevaFin,
       fechaCreacion: HOY,
+      estado: "Cargado",
     })
     setRango({ inicio: nuevaInicio, fin: nuevaFin })
     setCreando(false)
@@ -228,8 +230,39 @@ export function ForecastCalendar({
                           En proceso
                         </span>
                       )}
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                          r.estado === "Publicado"
+                            ? "bg-green-100 text-green-800 border border-green-300"
+                            : "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                        }`}
+                      >
+                        {r.estado}
+                      </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEstadoRonda(
+                            r.id,
+                            r.estado === "Publicado" ? "Cargado" : "Publicado"
+                          )
+                        }
+                        aria-label={
+                          r.estado === "Publicado"
+                            ? `Despublicar ronda ${fmtRangoConAnio(r.inicio, r.fin)}`
+                            : `Publicar ronda ${fmtRangoConAnio(r.inicio, r.fin)}`
+                        }
+                        title={r.estado === "Publicado" ? "Despublicar" : "Publicar"}
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {r.estado === "Publicado" ? (
+                          <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={() => onEditar(r.id)}
