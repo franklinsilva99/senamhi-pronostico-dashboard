@@ -1,7 +1,7 @@
 import {
   CloudRain,
   LayoutDashboard,
-  Map,
+  TriangleAlert,
   BarChart3,
   Bell,
   Settings,
@@ -10,7 +10,7 @@ import {
 const navItems = [
   { icon: LayoutDashboard, label: "Panel", href: "#" },
   { icon: CloudRain, label: "Pronóstico", href: "/" },
-  { icon: Map, label: "Mapa", href: "/mapa" },
+  { icon: TriangleAlert, label: "Aviso", href: "/aviso" },
   { icon: BarChart3, label: "Reportes", href: "#" },
   { icon: Bell, label: "Alertas", href: "#" },
 ]

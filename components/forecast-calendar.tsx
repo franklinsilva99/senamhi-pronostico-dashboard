@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { HOY } from "@/lib/seed"
 import {
@@ -37,7 +37,11 @@ const legend = [
   { label: "SIN PRONÓSTICO", color: "bg-noforecast" },
 ]
 
-export function ForecastCalendar() {
+export function ForecastCalendar({
+  onEditar,
+}: {
+  onEditar: (rondaId: string) => void
+}) {
   const { state, crearRonda, setRango, eliminarRonda } = useStore()
   const { rango } = state
 
@@ -225,14 +229,24 @@ export function ForecastCalendar() {
                         </span>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => eliminar(r.id)}
-                      aria-label={`Eliminar ronda ${fmtRangoConAnio(r.inicio, r.fin)}`}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onEditar(r.id)}
+                        aria-label={`Editar ronda ${fmtRangoConAnio(r.inicio, r.fin)}`}
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => eliminar(r.id)}
+                        aria-label={`Eliminar ronda ${fmtRangoConAnio(r.inicio, r.fin)}`}
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
                   </li>
                 )
               })}

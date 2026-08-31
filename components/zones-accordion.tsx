@@ -1,12 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { Minus, Plus, Trash2 } from "lucide-react"
+import { Minus, Pencil, Plus, Trash2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { fechaLargaCorta, fmtCortoConDia } from "@/lib/fechas"
 import type { Pronostico, Zona } from "@/lib/types"
 
-function PronosticoView({ pronostico }: { pronostico: Pronostico }) {
+function PronosticoView({
+  pronostico,
+  onEditar,
+}: {
+  pronostico: Pronostico
+  onEditar: (rondaId: string, zonaId: string) => void
+}) {
   const { eliminarPronostico } = useStore()
 
   return (
@@ -16,14 +22,24 @@ function PronosticoView({ pronostico }: { pronostico: Pronostico }) {
           Ronda {fmtCortoConDia(pronostico.inicio)} –{" "}
           {fmtCortoConDia(pronostico.fin)}
         </span>
-        <button
-          type="button"
-          onClick={() => eliminarPronostico(pronostico.id)}
-          aria-label="Eliminar pronóstico"
-          className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onEditar(pronostico.rondaId, pronostico.zonaId)}
+            aria-label="Editar pronóstico"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => eliminarPronostico(pronostico.id)}
+            aria-label="Eliminar pronóstico"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col">
@@ -53,7 +69,13 @@ function PronosticoView({ pronostico }: { pronostico: Pronostico }) {
   )
 }
 
-function ZoneCard({ zona }: { zona: Zona }) {
+function ZoneCard({
+  zona,
+  onEditar,
+}: {
+  zona: Zona
+  onEditar: (rondaId: string, zonaId: string) => void
+}) {
   const { state } = useStore()
   const [open, setOpen] = useState(false)
 
@@ -115,12 +137,12 @@ function ZoneCard({ zona }: { zona: Zona }) {
 
           {pronosticos.length === 0 && (
             <p className="text-xs italic text-muted-foreground">
-              Sin pronósticos. Edítalos en la vista de Mapa.
+              Sin pronósticos. Edítalos en la pestaña Mapa.
             </p>
           )}
 
           {pronosticos.map((p) => (
-            <PronosticoView key={p.id} pronostico={p} />
+            <PronosticoView key={p.id} pronostico={p} onEditar={onEditar} />
           ))}
         </div>
       )}
@@ -128,7 +150,11 @@ function ZoneCard({ zona }: { zona: Zona }) {
   )
 }
 
-export function ZonesAccordion() {
+export function ZonesAccordion({
+  onEditar,
+}: {
+  onEditar: (rondaId: string, zonaId: string) => void
+}) {
   const { state } = useStore()
   const zonas = state.zonas.filter((z) => z.sectorId === state.sectorActivoId)
 
@@ -136,7 +162,7 @@ export function ZonesAccordion() {
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex flex-col gap-3">
         {zonas.map((z) => (
-          <ZoneCard key={z.id} zona={z} />
+          <ZoneCard key={z.id} zona={z} onEditar={onEditar} />
         ))}
       </div>
     </div>
