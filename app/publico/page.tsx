@@ -5,7 +5,6 @@ import Link from "next/link"
 import { ArrowLeft, CloudRain } from "lucide-react"
 import { MapaPublicoWrapper } from "@/components/publico/mapa-publico-wrapper"
 import { AvisosPublicos } from "@/components/publico/avisos-publicos"
-import { fmtRangoConAnio } from "@/lib/fechas"
 import { useStore } from "@/lib/store"
 
 type Tab = "pronostico" | "avisos"
@@ -19,13 +18,7 @@ export default function PublicoPage() {
   const { state } = useStore()
   const [tab, setTab] = useState<Tab>("pronostico")
 
-  const rondasPublicadas = state.rondas
-    .filter((r) => r.estado === "Publicado")
-    .sort((a, b) => a.inicio.localeCompare(b.inicio))
-
-  const [rondaId, setRondaId] = useState(
-    () => rondasPublicadas[rondasPublicadas.length - 1]?.id ?? ""
-  )
+  const rondasPublicadas = state.rondas.filter((r) => r.estado === "Publicado")
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -77,25 +70,9 @@ export default function PublicoPage() {
                   <span className="text-sm font-semibold text-foreground">
                     Pronóstico publicado
                   </span>
-                  <label className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Ronda
-                    </span>
-                    <select
-                      value={rondaId}
-                      onChange={(e) => setRondaId(e.target.value)}
-                      className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground outline-none focus:border-ring"
-                    >
-                      {rondasPublicadas.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {fmtRangoConAnio(r.inicio, r.fin)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
                 <div className="relative h-[520px] overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                  {rondaId && <MapaPublicoWrapper rondaId={rondaId} />}
+                  <MapaPublicoWrapper />
                 </div>
               </>
             )}

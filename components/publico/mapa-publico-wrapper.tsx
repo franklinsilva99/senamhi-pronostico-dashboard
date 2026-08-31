@@ -11,6 +11,6 @@ const MapaPublico = dynamic(() => import("./mapa-publico"), {
   ),
 })
 
-export function MapaPublicoWrapper({ rondaId }: { rondaId: string }) {
-  return <MapaPublico rondaId={rondaId} />
+export function MapaPublicoWrapper() {
+  return <MapaPublico />
 }
