@@ -1,21 +1,38 @@
-import type { Aviso, RegionAviso } from "@/lib/types"
+import type { Aviso, DiaAviso, NivelAviso } from "@/lib/types"
 
-export const REGIONES_AVISO: RegionAviso[] = ["SELVA", "SIERRA", "COSTA"]
+export const NIVELES_AVISO: NivelAviso[] = ["ROJO", "NARANJA", "AMARILLO"]
 
-export function nivelAviso(a: Aviso): "Alta" | "Moderada" {
-  for (const reg of REGIONES_AVISO) {
-    if (a.detalles[reg]?.probabilidad === "A") return "Alta"
-  }
-  return "Moderada"
+export const NIVEL_COLOR: Record<
+  NivelAviso,
+  { badge: string; dot: string; banner: string }
+> = {
+  ROJO: {
+    badge: "bg-red-600 text-white border-red-700",
+    dot: "bg-red-600",
+    banner: "bg-red-600 text-white",
+  },
+  NARANJA: {
+    badge: "bg-orange-500 text-white border-orange-600",
+    dot: "bg-orange-500",
+    banner: "bg-orange-500 text-white",
+  },
+  AMARILLO: {
+    badge: "bg-yellow-400 text-yellow-950 border-yellow-500",
+    dot: "bg-yellow-400",
+    banner: "bg-yellow-400 text-yellow-950",
+  },
 }
 
-function detalleVacio() {
-  return {
-    tipo_precipitacion: "",
-    max_cantidad_pp: "",
-    probabilidad: "M" as const,
-    fenomenos_asociados: "",
-  }
+export function duracionHoras(inicio: string, fin: string): number | null {
+  if (!inicio || !fin) return null
+  const a = new Date(inicio).getTime()
+  const b = new Date(fin).getTime()
+  if (Number.isNaN(a) || Number.isNaN(b) || b <= a) return null
+  return Math.round((b - a) / (60 * 60 * 1000))
+}
+
+export function diaVacio(fecha = ""): DiaAviso {
+  return { id: "", fecha, descripcion: "", mapa_url: "" }
 }
 
 export function avisoVacio(): Aviso {
@@ -24,24 +41,17 @@ export function avisoVacio(): Aviso {
   const hasta = new Date(ahora.getTime() + 24 * 60 * 60 * 1000)
   return {
     id: "",
+    numero: "",
     codigo: "",
+    nivel: "NARANJA",
     titulo: "",
-    evento: "",
-    sede: "SEDE CENTRAL",
-    responsable: "",
     fecha_emision: aISO(ahora),
-    valido_desde: aISO(desde),
-    valido_hasta: aISO(hasta),
-    proxima_actualizacion: aISO(ahora),
-    departamentos_alertados: "",
+    inicio_evento: aISO(desde),
+    fin_evento: aISO(hasta),
+    departamentos: "",
+    cuerpo: "",
+    dias: [],
     estado: "Cargado",
-    mapa_url: "",
-    perspectivas: { SELVA: "", SIERRA: "", COSTA: "" },
-    detalles: {
-      SELVA: detalleVacio(),
-      SIERRA: detalleVacio(),
-      COSTA: detalleVacio(),
-    },
   }
 }
 

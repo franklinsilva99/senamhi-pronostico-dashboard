@@ -1,20 +1,28 @@
 "use client"
 
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react"
-import { nivelAviso } from "@/lib/aviso"
-import { fmtFechaISO } from "@/lib/fechas"
-import type { Aviso } from "@/lib/types"
+import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
+import { fmtFechaISO, fmtDateTimeISO } from "@/lib/fechas"
+import type { Aviso, NivelAviso } from "@/lib/types"
+
+function BadgeNivel({ nivel }: { nivel: NivelAviso }) {
+  return (
+    <span
+      className={`inline-block rounded px-2 py-0.5 text-xs font-bold border ${NIVEL_COLOR[nivel].badge}`}
+    >
+      {nivel}
+    </span>
+  )
+}
 
 function Badge({
   tone,
   children,
 }: {
-  tone: "alta" | "moderada" | "publicado" | "cargado"
+  tone: "publicado" | "cargado"
   children: React.ReactNode
 }) {
   const styles: Record<string, string> = {
-    alta: "bg-red-100 text-red-800 border-red-300",
-    moderada: "bg-yellow-100 text-yellow-800 border-yellow-300",
     publicado: "bg-green-100 text-green-800 border-green-300",
     cargado: "bg-yellow-100 text-yellow-800 border-yellow-300",
   }
@@ -34,13 +42,12 @@ function ActionButton({
   children,
 }: {
   title: string
-  tone?: "default" | "secondary" | "danger"
+  tone?: "default" | "danger"
   onClick: () => void
   children: React.ReactNode
 }) {
   const tones: Record<string, string> = {
     default: "text-primary border-border hover:bg-accent",
-    secondary: "text-primary border-border hover:bg-accent",
     danger: "text-destructive border-destructive/30 hover:bg-destructive/10",
   }
   return (
@@ -91,15 +98,12 @@ export function AvisoListado({
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <th className="px-3 py-2">#Aviso</th>
-                <th className="px-3 py-2 text-center">#Mapa</th>
                 <th className="px-3 py-2 text-center">Nivel</th>
                 <th className="px-3 py-2 text-center">Emisión</th>
                 <th className="px-3 py-2 text-center">Inicio</th>
                 <th className="px-3 py-2 text-center">Fin</th>
-                <th className="px-3 py-2 text-center">#Sede</th>
+                <th className="px-3 py-2 text-center">Duración</th>
                 <th className="px-3 py-2 text-center">Estado</th>
-                <th className="px-3 py-2 text-center">#Evento</th>
-                <th className="px-3 py-2 text-center">Responsable</th>
                 <th className="px-3 py-2 text-center">Acciones</th>
               </tr>
             </thead>
@@ -107,7 +111,7 @@ export function AvisoListado({
               {avisos.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={11}
+                    colSpan={8}
                     className="px-3 py-8 text-center text-sm italic text-muted-foreground"
                   >
                     No hay avisos. Usa el botón &quot;Crear Aviso&quot;.
@@ -115,51 +119,34 @@ export function AvisoListado({
                 </tr>
               ) : (
                 avisos.map((a) => {
-                  const nivel = nivelAviso(a)
+                  const horas = duracionHoras(a.inicio_evento, a.fin_evento)
                   return (
                     <tr
                       key={a.id}
                       className="border-b border-border/60 transition-colors last:border-b-0 hover:bg-accent/40"
                     >
                       <td className="px-3 py-2 font-mono text-xs text-foreground">
-                        {a.codigo || "—"}
+                        {a.numero || "—"}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        {a.mapa_url ? (
-                          <img
-                            src={a.mapa_url}
-                            alt="Mapa"
-                            className="inline-block h-9 w-9 rounded border border-border object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <Badge tone={nivel === "Alta" ? "alta" : "moderada"}>
-                          {nivel}
-                        </Badge>
+                        <BadgeNivel nivel={a.nivel} />
                       </td>
                       <td className="px-3 py-2 text-center font-mono text-xs">
-                        {fmtFechaISO(a.fecha_emision)}
+                        {fmtDateTimeISO(a.fecha_emision)}
                       </td>
                       <td className="px-3 py-2 text-center font-mono text-xs">
-                        {fmtFechaISO(a.valido_desde)}
+                        {fmtFechaISO(a.inicio_evento)}
                       </td>
                       <td className="px-3 py-2 text-center font-mono text-xs">
-                        {fmtFechaISO(a.valido_hasta)}
+                        {fmtFechaISO(a.fin_evento)}
                       </td>
-                      <td className="px-3 py-2 text-center text-muted-foreground">
-                        {a.sede || "—"}
+                      <td className="px-3 py-2 text-center font-mono text-xs">
+                        {horas != null ? `${horas} h` : "—"}
                       </td>
                       <td className="px-3 py-2 text-center">
                         <Badge tone={a.estado === "Publicado" ? "publicado" : "cargado"}>
                           {a.estado}
                         </Badge>
-                      </td>
-                      <td className="px-3 py-2 text-center">{a.evento || "—"}</td>
-                      <td className="px-3 py-2 text-center text-muted-foreground">
-                        {a.responsable || "—"}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">

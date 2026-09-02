@@ -1,207 +1,202 @@
 "use client"
 
 import { useState } from "react"
-import { Download, TriangleAlert } from "lucide-react"
+import { Download } from "lucide-react"
 import { AvisoPrint } from "@/components/publico/aviso-print"
-import { nivelAviso, REGIONES_AVISO } from "@/lib/aviso"
-import { fmtDateTimeISO, fmtFechaISO } from "@/lib/fechas"
+import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
+import { fmtDiaMes, fmtFechaEvento, fmtFechaISO } from "@/lib/fechas"
 import { useStore } from "@/lib/store"
-import type { Aviso } from "@/lib/types"
+import type { Aviso, NivelAviso } from "@/lib/types"
 
-function Badge({ tone, children }: { tone: "alta" | "moderada"; children: React.ReactNode }) {
-  const styles: Record<string, string> = {
-    alta: "bg-red-100 text-red-800 border border-red-300",
-    moderada: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  }
+function BadgeNivel({ nivel }: { nivel: NivelAviso }) {
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold ${styles[tone]}`}>
-      {children}
+    <span
+      className={`inline-block rounded px-2 py-0.5 text-xs font-bold border ${NIVEL_COLOR[nivel].badge}`}
+    >
+      {nivel}
     </span>
   )
 }
 
-function Leyenda({ nivel }: { nivel: "Alta" | "Moderada" }) {
+const ANTERIORES = "__anteriores__"
+
+function TabAviso({ aviso }: { aviso: Aviso }) {
+  const horas = duracionHoras(aviso.inicio_evento, aviso.fin_evento)
+  const [diaId, setDiaId] = useState<string | null>(null)
+
+  const diaActivo =
+    aviso.dias.find((d) => d.id === diaId) ??
+    aviso.dias.find((d) => d.mapa_url) ??
+    aviso.dias[0]
+
+  const descargar = () => window.print()
+
   return (
-    <div className="flex flex-wrap gap-6 rounded bg-muted p-3 text-xs text-muted-foreground">
-      <div className="flex flex-col gap-1">
-        <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-          Intensidad
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-foreground">
-          <span
-            className={`h-3 w-3 rounded-full ${nivel === "Alta" ? "bg-red-500" : "bg-yellow-400"}`}
-          />
-          {nivel}
-        </span>
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-6 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-bold text-foreground">
+            Aviso N° {aviso.numero || "—"}
+          </span>
+          <BadgeNivel nivel={aviso.nivel} />
+          <span className="rounded px-2 py-0.5 text-xs font-bold border bg-green-100 text-green-800 border-green-300">
+            {aviso.estado}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={descargar}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+        >
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          Descargar PDF
+        </button>
       </div>
-      <div className="flex flex-col gap-1">
-        <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-          Probabilidad
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-foreground">
-          <span className="h-3 w-3 rounded-full bg-red-500" /> A - Alta (&gt;60%)
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-foreground">
-          <span className="h-3 w-3 rounded-full bg-yellow-400" /> M - Moderada (40-60%)
-        </span>
+
+      <div className="p-6">
+        <h3 className="text-xl font-bold uppercase text-foreground">
+          {aviso.titulo || "—"}
+        </h3>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <div className="text-muted-foreground">
+            <strong className="font-semibold text-foreground">Fecha de emisión:</strong>{" "}
+            {fmtFechaEvento(aviso.fecha_emision)}
+          </div>
+          <div className="text-muted-foreground">
+            <strong className="font-semibold text-foreground">Inicio del evento:</strong>{" "}
+            {fmtFechaEvento(aviso.inicio_evento)}
+          </div>
+          <div className="text-muted-foreground">
+            <strong className="font-semibold text-foreground">Fin del evento:</strong>{" "}
+            {fmtFechaEvento(aviso.fin_evento)}
+          </div>
+          <div className="text-muted-foreground">
+            <strong className="font-semibold text-foreground">
+              Periodo de vigencia del aviso:
+            </strong>{" "}
+            {horas != null ? `${horas} horas` : "—"}
+          </div>
+        </div>
+
+        <hr className="my-4 border-border" />
+
+        {aviso.cuerpo && (
+          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+            {aviso.cuerpo}
+          </p>
+        )}
+
+        <div className="mt-4 text-sm text-muted-foreground">
+          <strong className="font-semibold text-foreground">
+            Departamentos alertados:
+          </strong>{" "}
+          {aviso.departamentos || "—"}
+        </div>
+
+        {aviso.dias.length > 0 && (
+          <div className="mt-6">
+            <div className="flex flex-wrap gap-2">
+              {aviso.dias.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDiaId(d.id)}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    diaActivo?.id === d.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {d.fecha ? fmtDiaMes(d.fecha) : "—"}
+                </button>
+              ))}
+            </div>
+
+            {diaActivo && (
+              <div className="mt-3">
+                {diaActivo.mapa_url ? (
+                  <img
+                    src={diaActivo.mapa_url}
+                    alt={`Mapa ${diaActivo.fecha}`}
+                    className="max-h-80 w-full rounded border border-border object-contain"
+                  />
+                ) : null}
+                {diaActivo.descripcion ? (
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                    {diaActivo.descripcion}
+                  </p>
+                ) : !diaActivo.mapa_url ? (
+                  <div className="rounded border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    Sin mapa para este día.
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function AvisoDestacado({ aviso }: { aviso: Aviso }) {
-  const nivel = nivelAviso(aviso)
-
-  const descargar = () => {
-    window.print()
-  }
-
+function TablaAnteriores({
+  avisos,
+  onSeleccionar,
+}: {
+  avisos: Aviso[]
+  onSeleccionar: (id: string) => void
+}) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-primary px-6 py-3 text-primary-foreground">
-        <div className="flex flex-wrap items-center gap-3">
-          <TriangleAlert className="h-4 w-4" aria-hidden="true" />
-          <span className="text-xs font-semibold uppercase tracking-wide">
-            Aviso meteorológico
-          </span>
-          <span className="font-mono text-xs">{aviso.codigo || "—"}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="rounded px-2 py-0.5 text-xs font-bold bg-primary-foreground/20 border border-primary-foreground/40">
-            {aviso.estado}
-          </span>
-          <span className="rounded px-2 py-0.5 text-xs font-bold bg-primary-foreground/20 border border-primary-foreground/40">
-            Nivel {nivel}
-          </span>
-          <button
-            type="button"
-            onClick={descargar}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary-foreground px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary-foreground/90"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            Descargar PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6">
-        <h2 className="mb-6 text-xl font-bold text-foreground">
-          {aviso.titulo || "—"}
-        </h2>
-
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="flex flex-col">
-            {aviso.mapa_url ? (
-              <div className="relative flex-1">
-                <img
-                  src={aviso.mapa_url}
-                  alt="Mapa del aviso"
-                  className="max-h-80 w-full rounded border border-border object-contain"
-                />
-                <div className="mt-2">
-                  <Leyenda nivel={nivel} />
-                </div>
-              </div>
-            ) : (
-              <Leyenda nivel={nivel} />
-            )}
-          </div>
-
-          <div>
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Fechas
-            </h4>
-            <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <div className="text-muted-foreground">
-                Fecha de emisión:
-                <br />
-                <strong className="font-mono text-foreground">
-                  {fmtDateTimeISO(aviso.fecha_emision)}
-                </strong>
-              </div>
-              <div className="text-muted-foreground">
-                Válido desde:
-                <br />
-                <strong className="font-mono text-foreground">
-                  {fmtFechaISO(aviso.valido_desde)}
-                </strong>
-              </div>
-              <div className="text-muted-foreground">
-                Válido hasta:
-                <br />
-                <strong className="font-mono text-foreground">
-                  {fmtFechaISO(aviso.valido_hasta)}
-                </strong>
-              </div>
-              <div className="text-muted-foreground">
-                Próxima actualización:
-                <br />
-                <strong className="font-mono text-foreground">
-                  {fmtDateTimeISO(aviso.proxima_actualizacion)}
-                </strong>
-              </div>
-            </div>
-
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Perspectivas
-            </h4>
-            {REGIONES_AVISO.map((reg) => (
-              <div key={reg} className="mb-2 text-sm">
-                <span className="font-bold text-foreground">{reg}: </span>
-                <span className="text-muted-foreground">
-                  {aviso.perspectivas[reg] || "—"}
-                </span>
-              </div>
-            ))}
-
-            <div className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
-              Departamentos alertados:
-              <br />
-              <strong className="text-foreground">
-                {aviso.departamentos_alertados || "—"}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Detalles técnicos
-        </h4>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <th className="px-3 py-2">Región</th>
-                <th className="px-3 py-2">Tipo de precipitación</th>
-                <th className="px-3 py-2">Máx. cantidad PP (mm/24h)</th>
-                <th className="px-3 py-2">Probabilidad</th>
-                <th className="px-3 py-2">Fenómenos asociados</th>
-              </tr>
-            </thead>
-            <tbody>
-              {REGIONES_AVISO.map((reg) => {
-                const dt = aviso.detalles[reg]
-                return (
-                  <tr key={reg} className="border-b border-border/60 last:border-b-0">
-                    <td className="px-3 py-2 font-bold text-foreground">{reg}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {dt?.tipo_precipitacion || "—"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {dt?.max_cantidad_pp || "—"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {dt?.probabilidad || "—"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {dt?.fenomenos_asociados || "—"}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Aviso</th>
+              <th className="px-3 py-2 text-center">Nro</th>
+              <th className="px-3 py-2 text-center">Emisión</th>
+              <th className="px-3 py-2 text-center">Inicio</th>
+              <th className="px-3 py-2 text-center">Fin</th>
+              <th className="px-3 py-2 text-center">Duración</th>
+              <th className="px-3 py-2 text-center">Nivel</th>
+            </tr>
+          </thead>
+          <tbody>
+            {avisos.map((a) => {
+              const horas = duracionHoras(a.inicio_evento, a.fin_evento)
+              return (
+                <tr
+                  key={a.id}
+                  onClick={() => onSeleccionar(a.id)}
+                  className="cursor-pointer border-b border-border/60 transition-colors last:border-b-0 hover:bg-accent/40"
+                >
+                  <td className="px-3 py-2 font-semibold uppercase text-foreground">
+                    {a.titulo || "—"}
+                  </td>
+                  <td className="px-3 py-2 text-center font-mono text-xs">
+                    {a.numero || "—"}
+                  </td>
+                  <td className="px-3 py-2 text-center font-mono text-xs">
+                    {fmtFechaISO(a.fecha_emision)}
+                  </td>
+                  <td className="px-3 py-2 text-center font-mono text-xs">
+                    {fmtFechaISO(a.inicio_evento)}
+                  </td>
+                  <td className="px-3 py-2 text-center font-mono text-xs">
+                    {fmtFechaISO(a.fin_evento)}
+                  </td>
+                  <td className="px-3 py-2 text-center font-mono text-xs">
+                    {horas != null ? `${horas} Hrs.` : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <BadgeNivel nivel={a.nivel} />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
@@ -214,7 +209,7 @@ export function AvisosPublicos() {
     .filter((a) => a.estado === "Publicado")
     .sort((a, b) => b.fecha_emision.localeCompare(a.fecha_emision))
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [tab, setTab] = useState<string | null>(null)
 
   if (avisos.length === 0) {
     return (
@@ -224,66 +219,58 @@ export function AvisosPublicos() {
     )
   }
 
-  const actual =
-    avisos.find((a) => a.id === selectedId) ?? avisos[0]
-  const anteriores = avisos.filter((a) => a.id !== actual.id)
+  const mostrandoAnteriores = tab === ANTERIORES
+  const activo = avisos.find((a) => a.id === tab) ?? avisos[0]
+
+  const tabCls = (activoId: boolean) =>
+    `-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+      activoId
+        ? "border-primary text-primary"
+        : "border-transparent text-muted-foreground hover:text-foreground"
+    }`
 
   return (
     <>
       <div className="flex flex-col gap-6 print:hidden">
-        <AvisoDestacado aviso={actual} />
-
-      {anteriores.length > 0 && (
         <div>
-          <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-foreground">
-            Avisos anteriores
-          </h3>
-          <div className="flex flex-col gap-3">
-            {anteriores.map((a) => {
-              const nivel = nivelAviso(a)
-              return (
-                <div
-                  key={a.id}
-                  className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-foreground">
-                      {a.codigo || "—"}
-                    </span>
-                    <Badge tone={nivel === "Alta" ? "alta" : "moderada"}>
-                      Nivel {nivel}
-                    </Badge>
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground">
-                    {a.titulo || "—"}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    {a.departamentos_alertados || "—"}
-                  </p>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      Vigencia:{" "}
-                      <span className="font-mono text-foreground">
-                        {fmtFechaISO(a.valido_desde)} → {fmtFechaISO(a.valido_hasta)}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(a.id)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
-                    >
-                      Ver en grande
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <h2 className="text-xl font-bold text-foreground">
+            Aviso Meteorológico
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Los Avisos Meteorológicos son pronósticos de carácter preventivo ante
+            eventos severos, indicando las áreas que podrían verse afectadas y el
+            nivel de peligrosidad.
+          </p>
         </div>
-      )}
+
+        <nav className="flex flex-wrap items-center gap-1 border-b border-border bg-card px-2">
+          {avisos.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => setTab(a.id)}
+              className={tabCls(!mostrandoAnteriores && activo.id === a.id)}
+            >
+              Aviso # {a.numero || "—"}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setTab(ANTERIORES)}
+            className={tabCls(mostrandoAnteriores)}
+          >
+            Anteriores
+          </button>
+        </nav>
+
+        {mostrandoAnteriores ? (
+          <TablaAnteriores avisos={avisos} onSeleccionar={(id) => setTab(id)} />
+        ) : (
+          <TabAviso aviso={activo} />
+        )}
       </div>
 
-      <AvisoPrint aviso={actual} />
+      <AvisoPrint aviso={activo} />
     </>
   )
 }

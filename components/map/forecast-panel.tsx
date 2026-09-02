@@ -1,24 +1,27 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, Wand2 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { HOY } from "@/lib/seed"
 import { fmtCortoConDia, fmtRangoConAnio, rangoFechas } from "@/lib/fechas"
 import { ICONOS, iconoSrc } from "@/lib/iconos"
 import { generarId } from "@/lib/utils"
+import { DescripcionBuilder } from "./descripcion-builder"
 import type { Pronostico, Ronda, Zona } from "@/lib/types"
 
 function ZonaEditor({
   zona,
   ronda,
   existente,
+  borrador,
   onGuardar,
   onEliminar,
 }: {
   zona: Zona
   ronda: Ronda
   existente?: Pronostico
+  borrador?: Pronostico
   onGuardar: (pronostico: Pronostico) => void
   onEliminar: (id: string) => void
 }) {
@@ -30,19 +33,21 @@ function ZonaEditor({
       string,
       { min: string; max: string; desc: string; icono: string }
     > = {}
-    for (const f of fechas) {
-      const d = existente?.dias.find((x) => x.fecha === f)
+    fechas.forEach((f, i) => {
+      const d =
+        existente?.dias.find((x) => x.fecha === f) ?? borrador?.dias[i]
       init[f] = {
         min: d ? String(d.tMin) : "",
         max: d ? String(d.tMax) : "",
         desc: d?.descripcion ?? "",
         icono: d?.icono ?? "",
       }
-    }
+    })
     return init
   })
 
   const [pickerAbierto, setPickerAbierto] = useState<string | null>(null)
+  const [builderFecha, setBuilderFecha] = useState<string | null>(null)
 
   const setCampo = (
     fecha: string,
@@ -53,6 +58,23 @@ function ZonaEditor({
       ...v,
       [fecha]: { ...v[fecha], [campo]: valor },
     }))
+  }
+
+  const aplicarDescripcion = (
+    fecha: string,
+    texto: string,
+    copiarTodos: boolean
+  ) => {
+    if (copiarTodos) {
+      setValores((v) => {
+        const next = { ...v }
+        for (const f of fechas) next[f] = { ...next[f], desc: texto }
+        return next
+      })
+    } else {
+      setCampo(fecha, "desc", texto)
+    }
+    setBuilderFecha(null)
   }
 
   const guardar = () => {
@@ -149,6 +171,17 @@ function ZonaEditor({
               aria-label={`Descripción ${fecha}`}
               className="h-6 min-w-0 flex-1 rounded border border-input bg-card px-2.5 text-[11px] text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
             />
+            <button
+              type="button"
+              onClick={() =>
+                setBuilderFecha((f) => (f === fecha ? null : fecha))
+              }
+              aria-label={`Codificar descripción ${fecha}`}
+              title="Codificar descripción"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-input bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           </div>
 
           {pickerAbierto === fecha && (
@@ -183,6 +216,16 @@ function ZonaEditor({
           )}
         </div>
       ))}
+
+      {builderFecha && (
+        <DescripcionBuilder
+          titulo={`${zona.nombre} · ${fmtCortoConDia(builderFecha)}`}
+          onCancelar={() => setBuilderFecha(null)}
+          onGuardar={(texto, copiarTodos) =>
+            aplicarDescripcion(builderFecha, texto, copiarTodos)
+          }
+        />
+      )}
     </div>
   )
 }
@@ -240,12 +283,19 @@ export function ForecastPanel({
           const existente = state.pronosticos.find(
             (p) => p.zonaId === z.id && p.rondaId === ronda.id
           )
+          const borrador =
+            existente || !ronda.copiaDe
+              ? undefined
+              : state.pronosticos.find(
+                  (p) => p.zonaId === z.id && p.rondaId === ronda.copiaDe
+                )
           return (
             <ZonaEditor
               key={`${z.id}-${ronda.id}`}
               zona={z}
               ronda={ronda}
               existente={existente}
+              borrador={borrador}
               onGuardar={guardarPronostico}
               onEliminar={eliminarPronostico}
             />

@@ -62,6 +62,21 @@ export function fechaLargaCorta(iso: string): string {
   return `${DIAS_CORTO[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} del ${d.getFullYear()}`
 }
 
+export function fmtDiaMes(iso: string): string {
+  if (!iso) return "—"
+  const d = fromISO(iso)
+  const mes = MESES[d.getMonth()]
+  return `${d.getDate()} de ${mes.charAt(0).toUpperCase()}${mes.slice(1)}`
+}
+
+export function fmtFechaEvento(iso: string): string {
+  if (!iso) return "—"
+  const [fecha, hora] = iso.split("T")
+  const d = fromISO(fecha)
+  const [hh, mm] = (hora ?? "00:00").slice(0, 5).split(":")
+  return `${DIAS_LARGO[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()} a las ${hh}:${mm} horas`
+}
+
 export function fmtDDMMYYYY(iso: string): string {
   const [y, m, d] = iso.split("-")
   return `${d}/${m}/${y}`

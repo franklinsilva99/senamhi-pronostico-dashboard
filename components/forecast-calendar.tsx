@@ -14,7 +14,7 @@ import {
   rondaCompleta,
 } from "@/lib/fechas"
 import { generarId } from "@/lib/utils"
-import type { DiaEstado } from "@/lib/types"
+import type { DiaEstado, Ronda } from "@/lib/types"
 
 type Day = {
   iso: string
@@ -49,6 +49,7 @@ export function ForecastCalendar({
   const [creando, setCreando] = useState(false)
   const [nuevaInicio, setNuevaInicio] = useState("")
   const [nuevaFin, setNuevaFin] = useState("")
+  const [copiarAnterior, setCopiarAnterior] = useState(false)
 
   const days: Day[] = []
   let cursor = rango.inicio
@@ -84,14 +85,17 @@ export function ForecastCalendar({
 
   const confirmarCrear = () => {
     if (!nuevaInicio || !nuevaFin || nuevaInicio > nuevaFin) return
-    crearRonda({
+    const anterior = rondasSector[rondasSector.length - 1]
+    const ronda: Ronda = {
       id: generarId(),
       sectorId: state.sectorActivoId,
       inicio: nuevaInicio,
       fin: nuevaFin,
       fechaCreacion: HOY,
       estado: "Cargado",
-    })
+      ...(copiarAnterior && anterior ? { copiaDe: anterior.id } : {}),
+    }
+    crearRonda(ronda)
     setRango({ inicio: nuevaInicio, fin: nuevaFin })
     setCreando(false)
   }
@@ -149,6 +153,15 @@ export function ForecastCalendar({
                 onChange={(e) => setNuevaFin(e.target.value)}
                 className="rounded-md border border-input bg-card px-2 py-1.5 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
               />
+            </label>
+            <label className="flex w-full items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={copiarAnterior}
+                onChange={(e) => setCopiarAnterior(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Copiar pronóstico de la ronda anterior
             </label>
             <button
               type="button"

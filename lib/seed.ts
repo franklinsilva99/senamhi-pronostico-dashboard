@@ -166,44 +166,71 @@ export function seedState(): AppState {
 
 const avisosSeed: Aviso[] = [
   {
-    id: "aviso-1",
-    codigo: "230-2026-SENAMHI/DMA/SPM",
-    titulo: "AVISO DE CORTO PLAZO ANTE LLUVIAS INTENSAS",
-    evento: "LLUVIAS INTENSAS",
-    sede: "DZ 08",
-    responsable: "Dirección de Meteorología",
-    fecha_emision: "2026-08-26T10:00",
-    valido_desde: "2026-08-26T10:00",
-    valido_hasta: "2026-08-29T23:59",
-    proxima_actualizacion: "2026-08-27T10:00",
-    departamentos_alertados: "LORETO, UCAYALI, HUÁNUCO, PASCO",
+    id: "aviso-342",
+    numero: "342",
+    codigo: "342-2026-SENAMHI/DMA",
+    nivel: "ROJO",
+    titulo: "INCREMENTO DE TEMPERATURA DIURNA EN LA COSTA Y SIERRA",
+    fecha_emision: "2026-08-30T10:00",
+    inicio_evento: "2026-09-01T00:00",
+    fin_evento: "2026-09-03T23:59",
+    departamentos:
+      "Tumbes, Piura, Lambayeque, La Libertad, Áncash, Lima, Ica, Arequipa, Moquegua, Tacna, Cajamarca, Huánuco, Pasco, Junín, Huancavelica, Ayacucho, Apurímac, Cusco y Puno",
     estado: "Publicado",
-    mapa_url: "",
-    perspectivas: {
-      SELVA:
-        "Lluvias intensas durante el día, con descargas eléctricas y ráfagas de viento.",
-      SIERRA: "Cielo nublado con llovizna ligera por la tarde.",
-      COSTA: "Cielo nublado parcial con brillo solar.",
-    },
-    detalles: {
-      SELVA: {
-        tipo_precipitacion: "Lluvia intensa",
-        max_cantidad_pp: "60",
-        probabilidad: "A",
-        fenomenos_asociados: "Descargas eléctricas, ráfagas de viento",
+    cuerpo:
+      "El SENAMHI informa que, desde el martes 1 al jueves 3 de setiembre, continuará el incremento de la temperatura diurna, de moderada a extrema intensidad en la costa y de moderada a fuerte intensidad en la sierra del país. Se prevé escasa nubosidad hacia el mediodía, lo que contribuirá al aumento de los niveles de radiación ultravioleta (UV). Asimismo, se esperan ráfagas de viento con velocidades cercanas a los 40 km/h, principalmente durante las horas de la tarde. No se descarta la ocurrencia de lluvia localizada en la costa norte.",
+    dias: [
+      {
+        id: "dia-342-1",
+        fecha: "2026-09-01",
+        descripcion:
+          "El martes 1 de setiembre se prevén temperaturas máximas entre 29 °C y 36 °C en la costa norte, valores entre 24 °C y 26 °C en la costa central y valores entre 22 °C y 29 °C en la costa sur. Asimismo, se esperan temperaturas máximas entre 20 °C y 32 °C en la sierra norte, entre 17 °C y 29 °C en la sierra central, y registros entre 14 °C y 27 °C en la sierra sur.",
+        mapa_url: "",
       },
-      SIERRA: {
-        tipo_precipitacion: "Llovizna",
-        max_cantidad_pp: "10",
-        probabilidad: "M",
-        fenomenos_asociados: "Neblina",
+      {
+        id: "dia-342-2",
+        fecha: "2026-09-02",
+        descripcion:
+          "El miércoles 2 de setiembre se prevén temperaturas máximas entre 29 °C y 36 °C en la costa norte, entre 24 °C y 28 °C en la costa central, y valores entre 21 °C y 29 °C en la costa sur. Asimismo, se esperan temperaturas máximas entre 18 °C y 32 °C en la sierra norte, entre 17 °C y 28 °C en la sierra central, y registros entre 14 °C y 26 °C en la sierra sur.",
+        mapa_url: "",
       },
-      COSTA: {
-        tipo_precipitacion: "Ninguna",
-        max_cantidad_pp: "0",
-        probabilidad: "M",
-        fenomenos_asociados: "Brillo solar",
+      {
+        id: "dia-342-3",
+        fecha: "2026-09-03",
+        descripcion:
+          "El jueves 3 de setiembre se prevén temperaturas máximas entre 29 °C y 36 °C en la costa norte, entre 24 °C y 29 °C en la costa central, y valores entre 22 °C y 30 °C en la costa sur. Asimismo, se esperan temperaturas máximas entre 18 °C y 32 °C en la sierra norte, entre 17 °C y 29 °C en la sierra central, y registros entre 14 °C y 26 °C en la sierra sur.",
+        mapa_url: "",
       },
-    },
+    ],
+  },
+  {
+    id: "aviso-343",
+    numero: "343",
+    codigo: "343-2026-SENAMHI/DMA",
+    nivel: "NARANJA",
+    titulo: "INCREMENTO DE TEMPERATURA DIURNA EN LA SELVA NORTE Y CENTRO",
+    fecha_emision: "2026-08-30T10:00",
+    inicio_evento: "2026-09-01T10:00",
+    fin_evento: "2026-09-02T23:59",
+    departamentos: "Loreto, San Martín, Ucayali, Huánuco y Junín",
+    estado: "Publicado",
+    cuerpo:
+      "El SENAMHI informa que, del martes 1 al miércoles 2 de setiembre, continuará el incremento de la temperatura diurna, de moderada a fuerte intensidad, en la selva norte y centro. Asimismo, se prevé escasa cobertura nubosa durante el día, lo que favorecerá el aumento de la radiación ultravioleta (UV). Además, se esperan ráfagas de viento con velocidades cercanas a los 45 km/h, principalmente durante las horas de la tarde. No se descarta la ocurrencia de chubascos.",
+    dias: [
+      {
+        id: "dia-343-1",
+        fecha: "2026-09-01",
+        descripcion:
+          "El martes 1 de setiembre se prevén temperaturas máximas entre 31 °C y 38 °C en la selva norte, y próximos a los 36 °C en la selva centro.",
+        mapa_url: "",
+      },
+      {
+        id: "dia-343-2",
+        fecha: "2026-09-02",
+        descripcion:
+          "El miércoles 2 de setiembre se prevén temperaturas máximas entre 30 °C y 36 °C en la selva norte.",
+        mapa_url: "",
+      },
+    ],
   },
 ]

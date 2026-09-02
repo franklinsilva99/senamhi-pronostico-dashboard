@@ -78,7 +78,7 @@ export default function PublicoPage() {
             )}
           </div>
         ) : (
-          <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-6xl">
             <AvisosPublicos />
           </div>
         )}

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ChevronDown } from "lucide-react"
+import { ArrowLeft, ChevronDown } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { fmtRangoConAnio } from "@/lib/fechas"
 
@@ -42,12 +42,12 @@ export function MapHeader({
   zonaFiltro,
   onZonaChange,
   rondaId,
-  onRondaChange,
+  onVolver,
 }: {
   zonaFiltro: string
   onZonaChange: (value: string) => void
   rondaId: string
-  onRondaChange: (value: string) => void
+  onVolver?: () => void
 }) {
   const { state, seleccionarSector } = useStore()
 
@@ -55,20 +55,30 @@ export function MapHeader({
   const rondas = state.rondas
     .filter((r) => r.sectorId === state.sectorActivoId)
     .sort((a, b) => a.inicio.localeCompare(b.inicio))
+  const ronda = rondas.find((r) => r.id === rondaId)
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-8 py-4">
-      <SelectField label="Ronda" value={rondaId} onChange={onRondaChange}>
-        {rondas.length === 0 ? (
-          <option value="">Sin rondas</option>
-        ) : (
-          rondas.map((r) => (
-            <option key={r.id} value={r.id}>
-              {fmtRangoConAnio(r.inicio, r.fin)}
-            </option>
-          ))
+      <div className="flex items-center gap-4">
+        {onVolver && (
+          <button
+            type="button"
+            onClick={onVolver}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Volver
+          </button>
         )}
-      </SelectField>
+        <label className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Pronóstico
+          </span>
+          <span className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground">
+            {ronda ? fmtRangoConAnio(ronda.inicio, ronda.fin) : "Sin pronóstico"}
+          </span>
+        </label>
+      </div>
 
       <div className="flex items-center gap-4">
         <SelectField

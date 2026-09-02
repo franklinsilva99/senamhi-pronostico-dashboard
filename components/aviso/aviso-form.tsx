@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Save, Trash2, X } from "lucide-react"
-import { REGIONES_AVISO } from "@/lib/aviso"
+import { Plus, Save, Trash2, X } from "lucide-react"
+import { NIVELES_AVISO, NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
 import { generarId } from "@/lib/utils"
-import type { Aviso, RegionAviso } from "@/lib/types"
+import type { Aviso, DiaAviso, NivelAviso } from "@/lib/types"
 
 function toLocalInput(iso: string): string {
   return iso ? iso.slice(0, 16) : ""
@@ -44,35 +44,33 @@ export function AvisoForm({
   const set = <K extends keyof Aviso>(key: K, value: Aviso[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
 
-  const setPerspectiva = (reg: RegionAviso, value: string) =>
+  const setDia = (index: number, patch: Partial<DiaAviso>) =>
     setDraft((d) => ({
       ...d,
-      perspectivas: { ...d.perspectivas, [reg]: value },
+      dias: d.dias.map((dia, i) => (i === index ? { ...dia, ...patch } : dia)),
     }))
 
-  const setDetalle = <K extends keyof Aviso["detalles"][RegionAviso]>(
-    reg: RegionAviso,
-    key: K,
-    value: Aviso["detalles"][RegionAviso][K]
-  ) =>
+  const agregarDia = () =>
     setDraft((d) => ({
       ...d,
-      detalles: {
-        ...d.detalles,
-        [reg]: { ...d.detalles[reg], [key]: value },
-      },
+      dias: [...d.dias, { id: generarId(), fecha: "", descripcion: "", mapa_url: "" }],
     }))
 
-  const onArchivo = (file: File | undefined) => {
+  const quitarDia = (index: number) =>
+    setDraft((d) => ({ ...d, dias: d.dias.filter((_, i) => i !== index) }))
+
+  const onArchivo = (index: number, file: File | undefined) => {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => set("mapa_url", String(reader.result))
+    reader.onload = () => setDia(index, { mapa_url: String(reader.result) })
     reader.readAsDataURL(file)
   }
 
   const guardar = () => {
     onGuardar({ ...draft, id: draft.id || generarId() })
   }
+
+  const horas = duracionHoras(draft.inicio_evento, draft.fin_evento)
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -91,6 +89,15 @@ export function AvisoForm({
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Field label="Número de aviso">
+          <input
+            type="text"
+            placeholder="ej. 342"
+            value={draft.numero}
+            onChange={(e) => set("numero", e.target.value)}
+            className={inputCls}
+          />
+        </Field>
         <Field label="Código">
           <input
             type="text"
@@ -99,37 +106,23 @@ export function AvisoForm({
             className={inputCls}
           />
         </Field>
-        <Field label="Título">
-          <input
-            type="text"
-            value={draft.titulo}
-            onChange={(e) => set("titulo", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Evento">
-          <input
-            type="text"
-            value={draft.evento}
-            onChange={(e) => set("evento", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="#Sede">
-          <input
-            type="text"
-            value={draft.sede}
-            onChange={(e) => set("sede", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Responsable">
-          <input
-            type="text"
-            value={draft.responsable}
-            onChange={(e) => set("responsable", e.target.value)}
-            className={inputCls}
-          />
+        <Field label="Nivel de peligrosidad">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-4 w-4 shrink-0 rounded-full ${NIVEL_COLOR[draft.nivel].dot}`}
+            />
+            <select
+              value={draft.nivel}
+              onChange={(e) => set("nivel", e.target.value as NivelAviso)}
+              className={inputCls}
+            >
+              {NIVELES_AVISO.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
         </Field>
         <Field label="Estado">
           <select
@@ -141,6 +134,16 @@ export function AvisoForm({
             <option value="Publicado">Publicado</option>
           </select>
         </Field>
+        <div className="md:col-span-2">
+          <Field label="Título">
+            <input
+              type="text"
+              value={draft.titulo}
+              onChange={(e) => set("titulo", e.target.value.toUpperCase())}
+              className={inputCls}
+            />
+          </Field>
+        </div>
         <Field label="Fecha de emisión">
           <input
             type="datetime-local"
@@ -149,176 +152,138 @@ export function AvisoForm({
             className={inputCls}
           />
         </Field>
-        <Field label="Válido desde">
-          <input
-            type="datetime-local"
-            value={toLocalInput(draft.valido_desde)}
-            onChange={(e) => set("valido_desde", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Válido hasta">
-          <input
-            type="datetime-local"
-            value={toLocalInput(draft.valido_hasta)}
-            onChange={(e) => set("valido_hasta", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Próxima actualización">
-          <input
-            type="datetime-local"
-            value={toLocalInput(draft.proxima_actualizacion)}
-            onChange={(e) => set("proxima_actualizacion", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
+        <div className="md:col-span-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Inicio del evento">
+              <input
+                type="datetime-local"
+                value={toLocalInput(draft.inicio_evento)}
+                onChange={(e) => set("inicio_evento", e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Fin del evento">
+              <input
+                type="datetime-local"
+                value={toLocalInput(draft.fin_evento)}
+                onChange={(e) => set("fin_evento", e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Periodo de vigencia:{" "}
+            <strong className="text-foreground">
+              {horas != null ? `${horas} horas` : "—"}
+            </strong>
+          </p>
+        </div>
         <div className="md:col-span-2">
           <Field label="Departamentos alertados">
             <textarea
               rows={2}
-              value={draft.departamentos_alertados}
-              onChange={(e) => set("departamentos_alertados", e.target.value)}
+              value={draft.departamentos}
+              onChange={(e) => set("departamentos", e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Cuerpo del aviso">
+            <textarea
+              rows={6}
+              value={draft.cuerpo}
+              onChange={(e) => set("cuerpo", e.target.value)}
               className={inputCls}
             />
           </Field>
         </div>
       </div>
 
-      <h4 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Perspectivas por región
-      </h4>
+      <div className="mb-2 mt-6 flex items-center justify-between">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Pronóstico por día
+        </h4>
+        <button
+          type="button"
+          onClick={agregarDia}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          Agregar día
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3">
-        {REGIONES_AVISO.map((reg) => {
-          const txt = draft.perspectivas[reg] ?? ""
-          return (
-            <div key={reg}>
-              <label className="mb-1 block text-sm font-semibold text-foreground">
-                {reg}
-              </label>
-              <textarea
-                rows={3}
-                maxLength={1000}
-                value={txt}
-                onChange={(e) => setPerspectiva(reg, e.target.value)}
-                className={inputCls}
-              />
-              <div className="mt-0.5 text-right font-mono text-xs text-muted-foreground">
-                {txt.length}/1000
+        {draft.dias.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            Sin días. Usa &quot;Agregar día&quot; para detallar el pronóstico.
+          </div>
+        ) : (
+          draft.dias.map((dia, i) => (
+            <div
+              key={dia.id}
+              className="rounded-lg border border-border p-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <Field label="Fecha">
+                  <input
+                    type="date"
+                    value={dia.fecha ? dia.fecha.slice(0, 10) : ""}
+                    onChange={(e) => setDia(i, { fecha: e.target.value })}
+                    className={`${inputCls} w-44`}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={() => quitarDia(i)}
+                  aria-label="Quitar día"
+                  className="mt-4 inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Quitar
+                </button>
+              </div>
+
+              <Field label="Descripción">
+                <textarea
+                  rows={3}
+                  value={dia.descripcion}
+                  onChange={(e) => setDia(i, { descripcion: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+
+              <div className="mt-2 flex items-center gap-4">
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => onArchivo(i, e.target.files?.[0])}
+                    className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/80"
+                  />
+                  {dia.mapa_url && (
+                    <button
+                      type="button"
+                      onClick={() => setDia(i, { mapa_url: "" })}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-destructive hover:underline"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Quitar imagen
+                    </button>
+                  )}
+                </div>
+                {dia.mapa_url && (
+                  <img
+                    src={dia.mapa_url}
+                    alt="Mapa del día"
+                    className="h-24 w-24 rounded border border-border object-cover"
+                  />
+                )}
               </div>
             </div>
-          )
-        })}
-      </div>
-
-      <h4 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Detalles técnicos por región
-      </h4>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <th className="px-3 py-2">Región</th>
-              <th className="px-3 py-2">Tipo de precipitación</th>
-              <th className="px-3 py-2">Máx. cantidad PP (mm/24h)</th>
-              <th className="px-3 py-2">Probabilidad</th>
-              <th className="px-3 py-2">Fenómenos asociados</th>
-            </tr>
-          </thead>
-          <tbody>
-            {REGIONES_AVISO.map((reg) => {
-              const dt = draft.detalles[reg]
-              return (
-                <tr
-                  key={reg}
-                  className="border-b border-border/60 last:border-b-0"
-                >
-                  <td className="px-3 py-2 font-bold text-foreground">{reg}</td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="text"
-                      value={dt.tipo_precipitacion}
-                      onChange={(e) =>
-                        setDetalle(reg, "tipo_precipitacion", e.target.value)
-                      }
-                      className={inputCls}
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="text"
-                      placeholder="ej. 5 – 20"
-                      value={dt.max_cantidad_pp}
-                      onChange={(e) =>
-                        setDetalle(reg, "max_cantidad_pp", e.target.value)
-                      }
-                      className={`${inputCls} w-24`}
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <select
-                      value={dt.probabilidad}
-                      onChange={(e) =>
-                        setDetalle(
-                          reg,
-                          "probabilidad",
-                          e.target.value as "A" | "M"
-                        )
-                      }
-                      className={inputCls}
-                    >
-                      <option value="A">A - Alta (&gt;60%)</option>
-                      <option value="M">M - Moderada (40-60%)</option>
-                    </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="text"
-                      value={dt.fenomenos_asociados}
-                      onChange={(e) =>
-                        setDetalle(reg, "fenomenos_asociados", e.target.value)
-                      }
-                      className={inputCls}
-                    />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-6">
-        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Mapa del aviso
-        </span>
-        <div className="flex items-center gap-4">
-          {draft.mapa_url && (
-            <img
-              src={draft.mapa_url}
-              alt="Mapa del aviso"
-              className="h-32 w-32 rounded border border-border object-cover"
-            />
-          )}
-          <div className="flex flex-col gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => onArchivo(e.target.files?.[0])}
-              className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/80"
-            />
-            {draft.mapa_url && (
-              <button
-                type="button"
-                onClick={() => set("mapa_url", "")}
-                className="inline-flex items-center gap-1 text-sm font-medium text-destructive hover:underline"
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Quitar imagen
-              </button>
-            )}
-          </div>
-        </div>
+          ))
+        )}
       </div>
 
       <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
@@ -332,7 +297,7 @@ export function AvisoForm({
         <button
           type="button"
           onClick={guardar}
-          disabled={!draft.codigo.trim() || !draft.titulo.trim()}
+          disabled={!draft.numero.trim() || !draft.titulo.trim()}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/80 disabled:opacity-50"
         >
           <Save className="h-4 w-4" aria-hidden="true" />

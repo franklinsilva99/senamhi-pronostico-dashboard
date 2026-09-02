@@ -50,6 +50,7 @@ export interface Ronda {
   fin: string
   fechaCreacion: string
   estado: EstadoPublicacion
+  copiaDe?: string
 }
 
 export interface Pronostico {
@@ -69,33 +70,29 @@ export interface RangoFechas {
   fin: string
 }
 
-export type RegionAviso = "SELVA" | "SIERRA" | "COSTA"
+export type NivelAviso = "ROJO" | "NARANJA" | "AMARILLO"
 export type EstadoAviso = EstadoPublicacion
-export type ProbabilidadAviso = "A" | "M"
 
-export interface DetalleAviso {
-  tipo_precipitacion: string
-  max_cantidad_pp: string
-  probabilidad: ProbabilidadAviso
-  fenomenos_asociados: string
+export interface DiaAviso {
+  id: string
+  fecha: string
+  descripcion: string
+  mapa_url: string
 }
 
 export interface Aviso {
   id: string
+  numero: string
   codigo: string
+  nivel: NivelAviso
   titulo: string
-  evento: string
-  sede: string
-  responsable: string
   fecha_emision: string
-  valido_desde: string
-  valido_hasta: string
-  proxima_actualizacion: string
-  departamentos_alertados: string
+  inicio_evento: string
+  fin_evento: string
+  departamentos: string
+  cuerpo: string
+  dias: DiaAviso[]
   estado: EstadoAviso
-  mapa_url: string
-  perspectivas: Record<RegionAviso, string>
-  detalles: Record<RegionAviso, DetalleAviso>
 }
 
 export interface AppState {

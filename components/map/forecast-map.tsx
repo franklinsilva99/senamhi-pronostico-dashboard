@@ -8,11 +8,13 @@ import {
   TileLayer,
   CircleMarker,
   Polygon,
+  Popup,
   Tooltip,
   useMap,
 } from "react-leaflet"
 import { useStore } from "@/lib/store"
 import { anillosDeFeature, featurePorUbigeo } from "@/lib/geo"
+import { EstacionPopupChart } from "./estacion-popup-chart"
 import type { Zona } from "@/lib/types"
 
 const STATUS_COLORS = {
@@ -138,6 +140,9 @@ export default function ForecastMap({
           }}
         >
           <Tooltip>{e.nombre}</Tooltip>
+          <Popup>
+            <EstacionPopupChart estacion={e} />
+          </Popup>
         </CircleMarker>
       ))}
     </MapContainer>

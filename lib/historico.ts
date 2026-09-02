@@ -63,6 +63,10 @@ export function historicoDeEstacion(estacionId: string): MedicionDiaria[] {
   return serie
 }
 
+export function ultimosDias(serie: MedicionDiaria[], n: number): MedicionDiaria[] {
+  return serie.slice(-n)
+}
+
 export function ultimos7Dias(serie: MedicionDiaria[]): MedicionDiaria[] {
-  return serie.slice(-7)
+  return ultimosDias(serie, 7)
 }

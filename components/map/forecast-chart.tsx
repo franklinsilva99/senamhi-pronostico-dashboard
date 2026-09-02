@@ -1,8 +1,8 @@
 "use client"
 
-import { Fragment } from "react"
+import { Fragment, useState } from "react"
 import { useStore } from "@/lib/store"
-import { historicoDeEstacion, ultimos7Dias } from "@/lib/historico"
+import { historicoDeEstacion, ultimosDias } from "@/lib/historico"
 import { fmtCortoConDia } from "@/lib/fechas"
 import {
   ResponsiveContainer,
@@ -41,15 +41,16 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone: 
         ? "text-primary"
         : "text-foreground"
   return (
-    <div className="rounded-lg border border-border bg-secondary/40 px-4 py-3">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-bold tabular-nums ${toneClass}`}>{value}</p>
+    <div className="rounded-lg border border-border bg-secondary/40 px-2.5 py-1.5">
+      <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`mt-0.5 text-base font-bold tabular-nums ${toneClass}`}>{value}</p>
     </div>
   )
 }
 
 export function ForecastChart({ zonaFiltro }: { zonaFiltro: string }) {
   const { state } = useStore()
+  const [diasN, setDiasN] = useState(7)
 
   const zona = state.zonas.find((z) => z.id === zonaFiltro)
   const estaciones = state.estaciones.filter((e) => e.zonaId === zonaFiltro)
@@ -72,7 +73,7 @@ export function ForecastChart({ zonaFiltro }: { zonaFiltro: string }) {
 
   const series = estaciones.map((e) => ({
     estacion: e,
-    dias: ultimos7Dias(historicoDeEstacion(e.id)),
+    dias: ultimosDias(historicoDeEstacion(e.id), diasN),
   }))
 
   const dias = series[0].dias.map((d) => d.fecha)
@@ -102,15 +103,34 @@ export function ForecastChart({ zonaFiltro }: { zonaFiltro: string }) {
   return (
     <div className="flex h-full flex-col gap-4 p-4">
       <div>
-        <h2 className="text-sm font-bold text-foreground">
-          Comparativa histórica · {zona.nombre}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-foreground">
+            Comparativa histórica · {zona.nombre}
+          </h2>
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+            {[7, 14, 30].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setDiasN(n)}
+                aria-pressed={diasN === n}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  diasN === n
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {n} días
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="text-xs text-muted-foreground">
-          Temperaturas máximas y mínimas registradas por las estaciones (últimos 7 días)
+          Temperaturas máximas y mínimas registradas por las estaciones (últimos {diasN} días)
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatCard label="Máx. pico" value={`${stats.peak}°`} tone="warm" />
         <StatCard label="Mín. absoluta" value={`${stats.low}°`} tone="cool" />
         <StatCard label="Promedio" value={`${stats.avg}°`} tone="neutral" />

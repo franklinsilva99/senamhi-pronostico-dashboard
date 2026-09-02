@@ -17,11 +17,6 @@ import { useStore } from "@/lib/store"
 
 type Vista = "resumen" | "mapa"
 
-const vistas: { id: Vista; label: string }[] = [
-  { id: "resumen", label: "Resumen" },
-  { id: "mapa", label: "Mapa" },
-]
-
 export default function Page() {
   const [vista, setVista] = useState<Vista>("resumen")
   const [mapTab, setMapTab] = useState<MapTab>("MAPA")
@@ -47,6 +42,8 @@ export default function Page() {
     setZonaFiltro(zonaId ?? "todos")
     setVista("mapa")
   }
+
+  const volverAResumen = () => setVista("resumen")
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -76,36 +73,18 @@ export default function Page() {
           </div>
         </header>
 
-        <nav className="flex items-end gap-1 border-b border-border bg-card px-8">
-          {vistas.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setVista(v.id)}
-              aria-current={vista === v.id ? "page" : undefined}
-              className={`-mb-px rounded-t-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                vista === v.id
-                  ? "border-border border-b-card bg-background text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </nav>
-
         {vista === "resumen" ? (
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
             <section aria-label="Rango de fechas" className="max-w-xl">
               <DateRange />
             </section>
 
-            <section aria-label="Calendario de pronóstico">
-              <ForecastCalendar onEditar={editarPronostico} />
-            </section>
-
             <section aria-label="Sectores">
               <SectorTabs />
+            </section>
+
+            <section aria-label="Calendario de pronóstico">
+              <ForecastCalendar onEditar={editarPronostico} />
             </section>
 
             <section aria-label="Zonas">
@@ -118,7 +97,7 @@ export default function Page() {
               zonaFiltro={zonaFiltro}
               onZonaChange={setZonaFiltro}
               rondaId={rondaId}
-              onRondaChange={setRondaId}
+              onVolver={volverAResumen}
             />
 
             <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
