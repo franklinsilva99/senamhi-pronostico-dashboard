@@ -16,8 +16,7 @@ import { divIcon } from "leaflet"
 import { useStore } from "@/lib/store"
 import { anillosDeFeature, featurePorUbigeo } from "@/lib/geo"
 import { iconoSrc } from "@/lib/iconos"
-import { entre, fmtCortoConDia, fmtRangoConAnio } from "@/lib/fechas"
-import { HOY } from "@/lib/seed"
+import { entre, fmtCortoConDia, fmtRangoConAnio, toISO } from "@/lib/fechas"
 import type { DiaPronostico, Pronostico, Ronda, Zona } from "@/lib/types"
 
 type ZonaMapa = { zona: Zona; anillos: [number, number][][] }
@@ -273,6 +272,8 @@ function PopupPronostico({
 export default function MapaPublico() {
   const { state } = useStore()
 
+  const hoy = toISO(new Date())
+
   const publishedIds = new Set(
     state.rondas.filter((r) => r.estado === "Publicado").map((r) => r.id)
   )
@@ -292,7 +293,7 @@ export default function MapaPublico() {
     if (candidatos.length === 0) return null
 
     const cubreHoy = candidatos.find((c) =>
-      entre(HOY, c.ronda.inicio, c.ronda.fin)
+      entre(hoy, c.ronda.inicio, c.ronda.fin)
     )
     const elegido =
       cubreHoy ??
@@ -302,7 +303,7 @@ export default function MapaPublico() {
   }
 
   const diaReferencia = (pronostico: Pronostico): DiaPronostico | undefined =>
-    pronostico.dias.find((d) => d.fecha === HOY) ?? pronostico.dias[0]
+    pronostico.dias.find((d) => d.fecha === hoy) ?? pronostico.dias[0]
 
   const zonasMapa: ZonaMapa[] = []
   for (const z of zonas) {

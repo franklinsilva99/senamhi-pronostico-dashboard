@@ -2,6 +2,7 @@
 
 import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
 import { fmtDateTimeISO, fmtFechaISO, fechaLargaCorta } from "@/lib/fechas"
+import { departamentosAfectados } from "@/lib/geo"
 import type { Aviso } from "@/lib/types"
 import { AvisoMapaPrint } from "@/components/publico/aviso-mapa-print"
 
@@ -13,6 +14,17 @@ export function AvisoPrint({
   mapas?: Record<string, unknown>
 }) {
   const horas = duracionHoras(aviso.inicio_evento, aviso.fin_evento)
+
+  const deptos = new Set<string>()
+  for (const dia of aviso.dias) {
+    const geojson = dia.mapa_geojson_id ? mapas?.[dia.mapa_geojson_id] : undefined
+    if (geojson) {
+      for (const d of departamentosAfectados(geojson)) deptos.add(d)
+    }
+  }
+  const listaDeptos = Array.from(deptos).sort()
+  const textoDeptos =
+    listaDeptos.length > 0 ? listaDeptos.join(", ") : aviso.departamentos || "—"
 
   return (
     <div className="hidden print:block">
@@ -93,7 +105,7 @@ export function AvisoPrint({
         <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-neutral-600">
           Departamentos alertados
         </p>
-        <p className="text-xs font-bold">{aviso.departamentos || "—"}</p>
+        <p className="text-xs font-bold">{textoDeptos}</p>
       </div>
 
       {/* Pie de página */}

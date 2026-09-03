@@ -335,7 +335,7 @@ export function AvisosPublicos() {
 
   const avisos = state.avisos
     .filter((a) => a.estado === "Publicado")
-    .sort((a, b) => b.fecha_emision.localeCompare(a.fecha_emision))
+    .sort((a, b) => (Number(b.numero) || 0) - (Number(a.numero) || 0))
 
   const [tab, setTab] = useState<string | null>(null)
 
