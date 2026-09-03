@@ -8,6 +8,7 @@ import { leerMapa } from "@/lib/aviso-mapa-db"
 import { fmtDiaMes, fmtFechaEvento, fmtFechaISO } from "@/lib/fechas"
 import { useStore } from "@/lib/store"
 import type { Aviso, NivelAviso } from "@/lib/types"
+import { AvisoMapaMini } from "@/components/publico/aviso-mapa-mini"
 import dynamic from "next/dynamic"
 
 const AvisoMapa = dynamic(() => import("@/components/publico/aviso-mapa"), {
@@ -51,6 +52,20 @@ function useMapaVector(id: string | undefined): unknown | undefined {
   }, [id])
 
   return data
+}
+
+function MiniMapa({ id }: { id: string }) {
+  const data = useMapaVector(id)
+
+  if (!data) {
+    return (
+      <div className="flex h-28 w-full items-center justify-center bg-muted text-xs text-muted-foreground">
+        …
+      </div>
+    )
+  }
+
+  return <AvisoMapaMini geojson={data} />
 }
 
 function TabAviso({ aviso }: { aviso: Aviso }) {
@@ -132,52 +147,69 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
         </div>
 
         {aviso.dias.length > 0 && (
-          <div className="mt-6">
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_200px]">
+            <div>
+              {diaActivo && (
+                <div>
+                  {diaActivo.mapa_geojson_id ? (
+                    mapaData ? (
+                      <AvisoMapa geojson={mapaData} />
+                    ) : (
+                      <div className="flex h-72 w-full items-center justify-center rounded border border-border bg-muted text-sm text-muted-foreground">
+                        Cargando mapa…
+                      </div>
+                    )
+                  ) : diaActivo.mapa_url ? (
+                    <img
+                      src={diaActivo.mapa_url}
+                      alt={`Mapa ${diaActivo.fecha}`}
+                      className="max-h-80 w-full rounded border border-border object-contain"
+                    />
+                  ) : null}
+                  {diaActivo.descripcion ? (
+                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                      {diaActivo.descripcion}
+                    </p>
+                  ) : !diaActivo.mapa_geojson_id && !diaActivo.mapa_url ? (
+                    <div className="rounded border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                      Sin mapa para este día.
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
               {aviso.dias.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => setDiaId(d.id)}
-                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`overflow-hidden rounded-lg border bg-card text-left transition-colors ${
                     diaActivo?.id === d.id
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground hover:bg-accent"
+                      ? "border-primary ring-1 ring-primary"
+                      : "border-border hover:border-primary/50"
                   }`}
                 >
-                  {d.fecha ? fmtDiaMes(d.fecha) : "—"}
+                  {d.mapa_geojson_id ? (
+                    <MiniMapa id={d.mapa_geojson_id} />
+                  ) : d.mapa_url ? (
+                    <img
+                      src={d.mapa_url}
+                      alt=""
+                      className="w-full rounded-t-lg object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-28 w-full items-center justify-center bg-muted text-xs text-muted-foreground">
+                      Sin mapa
+                    </div>
+                  )}
+                  <span className="block px-2 py-1.5 text-xs font-semibold">
+                    {d.fecha ? fmtDiaMes(d.fecha) : "—"}
+                  </span>
                 </button>
               ))}
             </div>
-
-            {diaActivo && (
-              <div className="mt-3">
-                {diaActivo.mapa_geojson_id ? (
-                  mapaData ? (
-                    <AvisoMapa geojson={mapaData} />
-                  ) : (
-                    <div className="flex h-72 w-full items-center justify-center rounded border border-border bg-muted text-sm text-muted-foreground">
-                      Cargando mapa…
-                    </div>
-                  )
-                ) : diaActivo.mapa_url ? (
-                  <img
-                    src={diaActivo.mapa_url}
-                    alt={`Mapa ${diaActivo.fecha}`}
-                    className="max-h-80 w-full rounded border border-border object-contain"
-                  />
-                ) : null}
-                {diaActivo.descripcion ? (
-                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                    {diaActivo.descripcion}
-                  </p>
-                ) : !diaActivo.mapa_geojson_id && !diaActivo.mapa_url ? (
-                  <div className="rounded border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    Sin mapa para este día.
-                  </div>
-                ) : null}
-              </div>
-            )}
           </div>
         )}
       </div>
