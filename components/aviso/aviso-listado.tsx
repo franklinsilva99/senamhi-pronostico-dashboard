@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye, Pencil, Plus, Trash2 } from "lucide-react"
+import { Eye, EyeOff, Pencil, Plus, Trash2, Upload } from "lucide-react"
 import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
 import { fmtFechaISO, fmtDateTimeISO } from "@/lib/fechas"
 import type { Aviso, NivelAviso } from "@/lib/types"
@@ -69,12 +69,14 @@ export function AvisoListado({
   onVer,
   onEditar,
   onEliminar,
+  onToggleEstado,
 }: {
   avisos: Aviso[]
   onCrear: () => void
   onVer: (id: string) => void
   onEditar: (id: string) => void
   onEliminar: (id: string) => void
+  onToggleEstado: (id: string) => void
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -152,6 +154,16 @@ export function AvisoListado({
                         <div className="flex items-center justify-center gap-1">
                           <ActionButton title="Ver" onClick={() => onVer(a.id)}>
                             <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                          </ActionButton>
+                          <ActionButton
+                            title={a.estado === "Publicado" ? "Despublicar" : "Publicar"}
+                            onClick={() => onToggleEstado(a.id)}
+                          >
+                            {a.estado === "Publicado" ? (
+                              <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                            ) : (
+                              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
                           </ActionButton>
                           <ActionButton title="Editar" onClick={() => onEditar(a.id)}>
                             <Pencil className="h-3.5 w-3.5" aria-hidden="true" />

@@ -26,6 +26,42 @@ export const NIVEL_COLOR: Record<
   },
 }
 
+const NIVEL_SHAPEFILE_A_AVISO: Record<string, NivelAviso> = {
+  "Nivel 2": "AMARILLO",
+  "Nivel 3": "NARANJA",
+  "Nivel 4": "ROJO",
+}
+
+const ORDEN_NIVEL: Record<NivelAviso, number> = {
+  AMARILLO: 1,
+  NARANJA: 2,
+  ROJO: 3,
+}
+
+export function nivelDesdeGeojson(geojson: unknown): NivelAviso | null {
+  const data = geojson as {
+    features?: { properties?: { nivel?: unknown } }[]
+  }
+  let mejor: NivelAviso | null = null
+  for (const f of data?.features ?? []) {
+    const nivel = NIVEL_SHAPEFILE_A_AVISO[String(f.properties?.nivel ?? "")]
+    if (!nivel) continue
+    if (!mejor || ORDEN_NIVEL[nivel] > ORDEN_NIVEL[mejor]) mejor = nivel
+  }
+  return mejor
+}
+
+export function nivelMaximo(lista: unknown[]): NivelAviso | null {
+  let mejor: NivelAviso | null = null
+  for (const geojson of lista) {
+    const nivel = nivelDesdeGeojson(geojson)
+    if (nivel && (!mejor || ORDEN_NIVEL[nivel] > ORDEN_NIVEL[mejor])) {
+      mejor = nivel
+    }
+  }
+  return mejor
+}
+
 export function duracionHoras(inicio: string, fin: string): number | null {
   if (!inicio || !fin) return null
   const a = new Date(inicio).getTime()

@@ -61,7 +61,7 @@ const TILDES: Record<string, string> = {
 
 const PARTICULAS = new Set(["de", "del", "la", "los", "las", "el", "y"])
 
-function capitalizar(texto: string): string {
+export function capitalizar(texto: string): string {
   return texto
     .trim()
     .split(/\s+/)

@@ -11,7 +11,7 @@ import { useStore } from "@/lib/store"
 import type { Aviso } from "@/lib/types"
 
 export default function AvisoPage() {
-  const { state, guardarAviso, eliminarAviso } = useStore()
+  const { state, guardarAviso, eliminarAviso, setEstadoAviso } = useStore()
 
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [creando, setCreando] = useState(false)
@@ -38,6 +38,13 @@ export default function AvisoPage() {
   const eliminar = (id: string) => {
     if (window.confirm("¿Eliminar este aviso?")) {
       eliminarAviso(id)
+    }
+  }
+
+  const toggleEstado = (id: string) => {
+    const aviso = avisos.find((a) => a.id === id)
+    if (aviso) {
+      setEstadoAviso(id, aviso.estado === "Publicado" ? "Cargado" : "Publicado")
     }
   }
 
@@ -85,6 +92,7 @@ export default function AvisoPage() {
               onVer={(id) => setViendoId(id)}
               onEditar={(id) => setEditandoId(id)}
               onEliminar={eliminar}
+              onToggleEstado={toggleEstado}
             />
           )}
         </div>

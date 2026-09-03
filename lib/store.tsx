@@ -28,6 +28,7 @@ type Action =
   | { type: "setRango"; rango: RangoFechas }
   | { type: "guardarAviso"; aviso: Aviso }
   | { type: "eliminarAviso"; id: string }
+  | { type: "setEstadoAviso"; id: string; estado: EstadoPublicacion }
   | { type: "setEstadoRonda"; id: string; estado: EstadoPublicacion }
 
 const STORAGE_KEY = "senamhi.pronostico.v8"
@@ -83,6 +84,13 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         avisos: state.avisos.filter((a) => a.id !== action.id),
       }
+    case "setEstadoAviso":
+      return {
+        ...state,
+        avisos: state.avisos.map((a) =>
+          a.id === action.id ? { ...a, estado: action.estado } : a
+        ),
+      }
     case "setEstadoRonda":
       return {
         ...state,
@@ -105,6 +113,7 @@ interface StoreValue {
   setRango: (rango: RangoFechas) => void
   guardarAviso: (aviso: Aviso) => void
   eliminarAviso: (id: string) => void
+  setEstadoAviso: (id: string, estado: EstadoPublicacion) => void
   setEstadoRonda: (id: string, estado: EstadoPublicacion) => void
 }
 
@@ -148,6 +157,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setRango: (rango) => dispatch({ type: "setRango", rango }),
     guardarAviso: (aviso) => dispatch({ type: "guardarAviso", aviso }),
     eliminarAviso: (id) => dispatch({ type: "eliminarAviso", id }),
+    setEstadoAviso: (id, estado) =>
+      dispatch({ type: "setEstadoAviso", id, estado }),
     setEstadoRonda: (id, estado) =>
       dispatch({ type: "setEstadoRonda", id, estado }),
   }

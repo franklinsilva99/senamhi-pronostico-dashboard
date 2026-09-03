@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, Save, Trash2, X } from "lucide-react"
 import shp from "shpjs"
-import { NIVELES_AVISO, NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
-import { guardarMapa, eliminarMapa } from "@/lib/aviso-mapa-db"
+import { NIVELES_AVISO, NIVEL_COLOR, duracionHoras, nivelMaximo } from "@/lib/aviso"
+import { guardarMapa, leerMapa, eliminarMapa } from "@/lib/aviso-mapa-db"
+import { departamentosAfectados } from "@/lib/geo"
+import { AvisoMapaMini } from "@/components/publico/aviso-mapa-mini"
+import { capitalizar } from "@/lib/seed"
 import { generarId } from "@/lib/utils"
 import type { Aviso, DiaAviso, NivelAviso } from "@/lib/types"
 
@@ -64,14 +67,57 @@ export function AvisoForm({
     setDraft((d) => ({ ...d, dias: d.dias.filter((_, i) => i !== index) }))
   }
 
-  const onArchivo = (index: number, file: File | undefined) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setDia(index, { mapa_url: String(reader.result) })
-    reader.readAsDataURL(file)
-  }
-
   const [leyendoShape, setLeyendoShape] = useState<number | null>(null)
+
+  const [derivados, setDerivados] = useState<string[] | null>(null)
+  const [derivando, setDerivando] = useState(false)
+  const [nivelDetectado, setNivelDetectado] = useState<NivelAviso | null>(null)
+  const [mapasGeojson, setMapasGeojson] = useState<Record<string, unknown>>({})
+
+  const mapaIds = draft.dias
+    .map((d) => d.mapa_geojson_id)
+    .filter((id): id is string => Boolean(id))
+
+  useEffect(() => {
+    const unicos = Array.from(new Set(mapaIds))
+    if (unicos.length === 0) {
+      setDerivados(null)
+      setDerivando(false)
+      setNivelDetectado(null)
+      setMapasGeojson({})
+      return
+    }
+    let cancelado = false
+    setDerivando(true)
+    Promise.all(
+      unicos.map((id) =>
+        leerMapa(id)
+          .then((v) => ({ id, v }))
+          .catch(() => ({ id, v: undefined }))
+      )
+    ).then((res) => {
+      if (cancelado) return
+      const deptos = new Set<string>()
+      const geojsons: unknown[] = []
+      const next: Record<string, unknown> = {}
+      for (const { id, v } of res) {
+        if (v === undefined) continue
+        next[id] = v
+        geojsons.push(v)
+        for (const d of departamentosAfectados(v)) deptos.add(d)
+      }
+      setMapasGeojson(next)
+      setDerivados(Array.from(deptos).sort().map(capitalizar))
+      const nivel = nivelMaximo(geojsons)
+      setNivelDetectado(nivel)
+      if (nivel) set("nivel", nivel)
+      setDerivando(false)
+    })
+    return () => {
+      cancelado = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapaIds.join("|")])
 
   const onShapefile = async (index: number, file: File | undefined) => {
     if (!file) return
@@ -94,6 +140,19 @@ export function AvisoForm({
 
   const guardar = () => {
     onGuardar({ ...draft, id: draft.id || generarId() })
+  }
+
+  useEffect(() => {
+    if (derivados && derivados.length > 0 && !draft.departamentos.trim()) {
+      set("departamentos", derivados.join(", "))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [derivados])
+
+  const usarDerivados = () => {
+    if (derivados && derivados.length > 0) {
+      set("departamentos", derivados.join(", "))
+    }
   }
 
   const horas = duracionHoras(draft.inicio_evento, draft.fin_evento)
@@ -135,13 +194,19 @@ export function AvisoForm({
         <Field label="Nivel de peligrosidad">
           <div className="flex items-center gap-2">
             <span
-              className={`h-4 w-4 shrink-0 rounded-full ${NIVEL_COLOR[draft.nivel].dot}`}
+              className={`h-4 w-4 shrink-0 rounded-full ${
+                nivelDetectado ? NIVEL_COLOR[draft.nivel].dot : "bg-neutral-400"
+              }`}
             />
             <select
-              value={draft.nivel}
+              value={nivelDetectado ? draft.nivel : ""}
               onChange={(e) => set("nivel", e.target.value as NivelAviso)}
+              disabled={!nivelDetectado}
               className={inputCls}
             >
+              <option value="" disabled>
+                Sin shapefile
+              </option>
               {NIVELES_AVISO.map((n) => (
                 <option key={n} value={n}>
                   {n}
@@ -149,6 +214,12 @@ export function AvisoForm({
               ))}
             </select>
           </div>
+          {nivelDetectado && (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Nivel detectado del shapefile:{" "}
+              <strong className="text-foreground">{nivelDetectado}</strong>
+            </p>
+          )}
         </Field>
         <Field label="Estado">
           <select
@@ -212,6 +283,31 @@ export function AvisoForm({
               onChange={(e) => set("departamentos", e.target.value)}
               className={inputCls}
             />
+            <div className="mt-1.5 text-xs text-muted-foreground">
+              {derivando ? (
+                <span className="italic">Leyendo shapefiles…</span>
+              ) : derivados && derivados.length > 0 ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  <span>
+                    Departamentos detectados:{" "}
+                    <strong className="text-foreground">
+                      {derivados.join(", ")}
+                    </strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={usarDerivados}
+                    className="inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 font-semibold text-foreground transition-colors hover:bg-accent"
+                  >
+                    Usar detectados
+                  </button>
+                </span>
+              ) : mapaIds.length > 0 ? (
+                "No se detectaron departamentos."
+              ) : (
+                "Carga un shapefile por día para derivar los departamentos."
+              )}
+            </div>
           </Field>
         </div>
         <div className="md:col-span-2">
@@ -280,34 +376,6 @@ export function AvisoForm({
                 />
               </Field>
 
-              <div className="mt-2 flex items-center gap-4">
-                <div className="flex flex-col gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => onArchivo(i, e.target.files?.[0])}
-                    className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/80"
-                  />
-                  {dia.mapa_url && (
-                    <button
-                      type="button"
-                      onClick={() => setDia(i, { mapa_url: "" })}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-destructive hover:underline"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      Quitar imagen
-                    </button>
-                  )}
-                </div>
-                {dia.mapa_url && (
-                  <img
-                    src={dia.mapa_url}
-                    alt="Mapa del día"
-                    className="h-24 w-24 rounded border border-border object-cover"
-                  />
-                )}
-              </div>
-
               <div className="mt-2 flex flex-wrap items-center gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -338,6 +406,17 @@ export function AvisoForm({
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     Quitar mapa vectorial
                   </button>
+                )}
+                {dia.mapa_geojson_id && (
+                  mapasGeojson[dia.mapa_geojson_id] ? (
+                    <div className="w-24 shrink-0 rounded border border-border">
+                      <AvisoMapaMini geojson={mapasGeojson[dia.mapa_geojson_id]} />
+                    </div>
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded border border-border bg-muted text-xs text-muted-foreground">
+                      Cargando…
+                    </div>
+                  )
                 )}
               </div>
             </div>

@@ -18,16 +18,12 @@ const navItems = [
 export function AppSidebar({ active = "Pronóstico" }: { active?: string }) {
   return (
     <aside className="flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-          <CloudRain className="h-5 w-5" aria-hidden="true" />
-        </div>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold tracking-tight">SENAMHI</p>
-          <p className="text-[11px] text-sidebar-foreground/70">
-            Meteorología e Hidrología
-          </p>
-        </div>
+      <div className="px-5 py-5">
+        <img
+          src="/logo-senamhi.svg"
+          alt="SENAMHI"
+          className="h-12 w-auto"
+        />
       </div>
 
       <div className="mx-5 mb-4 rounded-xl bg-sidebar-accent px-4 py-3">

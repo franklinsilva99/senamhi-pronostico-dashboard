@@ -30,7 +30,7 @@ export function AvisoPrint({
     <div className="hidden print:block">
       {/* Encabezado */}
       <div className="flex items-start justify-between gap-4">
-        <img src="/senamhi-logo.png" alt="SENAMHI" className="h-12 w-auto" />
+        <img src="/logo-senamhi.svg" alt="SENAMHI" className="h-12 w-auto" />
         <div className="flex-1 text-center">
           <p className="font-mono text-xs font-bold text-[#005cba]">
             AVISO METEOROLÓGICO N° {aviso.numero || "—"} · {aviso.codigo || ""}
@@ -44,7 +44,7 @@ export function AvisoPrint({
             NIVEL {aviso.nivel}
           </span>
         </div>
-        <img src="/senamhi-logo.png" alt="SENAMHI" className="h-12 w-auto" />
+        <img src="/logo-senamhi.svg" alt="SENAMHI" className="h-12 w-auto" />
       </div>
 
       {/* Caja de vigencia */}
