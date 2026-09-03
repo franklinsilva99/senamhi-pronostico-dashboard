@@ -69,6 +69,16 @@ export function fmtDiaMes(iso: string): string {
   return `${d.getDate()} de ${mes.charAt(0).toUpperCase()}${mes.slice(1)}`
 }
 
+export function fmtFechaCompleta(iso: string): string {
+  if (!iso) return "—"
+  const d = fromISO(iso)
+  const dia = DIAS_LARGO[d.getDay()]
+  const diaCap = dia.charAt(0).toUpperCase() + dia.slice(1)
+  const mes = MESES[d.getMonth()]
+  const mesCap = mes.charAt(0).toUpperCase() + mes.slice(1)
+  return `${diaCap}, ${String(d.getDate()).padStart(2, "0")} de ${mesCap} de ${d.getFullYear()}`
+}
+
 export function fmtFechaEvento(iso: string): string {
   if (!iso) return "—"
   const [fecha, hora] = iso.split("T")

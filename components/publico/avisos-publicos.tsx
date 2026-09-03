@@ -200,7 +200,11 @@ function TabAviso({
                 <div>
                   {diaActivo.mapa_geojson_id ? (
                     mapaData ? (
-                      <AvisoMapa geojson={mapaData} />
+                      <AvisoMapa
+                        geojson={mapaData}
+                        aviso={aviso}
+                        fecha={diaActivo.fecha}
+                      />
                     ) : (
                       <div className="flex h-72 w-full items-center justify-center rounded border border-border bg-muted text-sm text-muted-foreground">
                         Cargando mapa…

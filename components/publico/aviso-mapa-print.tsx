@@ -20,16 +20,15 @@ type GeoJSONCollection = {
 
 const NIVEL_COLOR: Record<string, string> = {
   "Nivel 1": "#16a34a",
-  "Nivel 2": "#eab308",
-  "Nivel 3": "#f97316",
-  "Nivel 4": "#dc2626",
+  "Nivel 2": "#fbfb05",
+  "Nivel 3": "#fb743c",
+  "Nivel 4": "#fb0505",
 }
 
 const LEYENDA = [
-  { nombre: "Nivel 1 · Verde", color: "#16a34a" },
-  { nombre: "Nivel 2 · Amarillo", color: "#eab308" },
-  { nombre: "Nivel 3 · Naranja", color: "#f97316" },
-  { nombre: "Nivel 4 · Rojo", color: "#dc2626" },
+  { nombre: "Amarillo", color: "#fbfb05" },
+  { nombre: "Naranja", color: "#fb743c" },
+  { nombre: "Rojo", color: "#fb0505" },
 ]
 
 const PERU_ANILLOS: [number, number][][] = DEPARTAMENTOS.features.flatMap((f) =>
@@ -181,7 +180,7 @@ export function AvisoMapaPrint({
 
       <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-neutral-700">
         <span className="font-bold uppercase tracking-wide text-neutral-500">
-          Nivel de peligrosidad
+          Niveles de peligro
         </span>
         {LEYENDA.map((l) => (
           <span key={l.nombre} className="inline-flex items-center gap-1">

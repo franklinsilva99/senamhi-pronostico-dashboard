@@ -18,9 +18,9 @@ type GeoJSONCollection = {
 
 const NIVEL_COLOR: Record<string, string> = {
   "Nivel 1": "#16a34a",
-  "Nivel 2": "#eab308",
-  "Nivel 3": "#f97316",
-  "Nivel 4": "#dc2626",
+  "Nivel 2": "#fbfb05",
+  "Nivel 3": "#fb743c",
+  "Nivel 4": "#fb0505",
 }
 
 function swapRing(ring: number[][]): [number, number][] {
