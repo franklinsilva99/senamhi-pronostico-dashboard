@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Download } from "lucide-react"
 import { AvisoPrint } from "@/components/publico/aviso-print"
 import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
@@ -68,7 +68,53 @@ function MiniMapa({ id }: { id: string }) {
   return <AvisoMapaMini geojson={data} />
 }
 
-function TabAviso({ aviso }: { aviso: Aviso }) {
+function useMapasVector(
+  ids: string[]
+): { mapas: Record<string, unknown>; cargando: boolean } {
+  const [mapas, setMapas] = useState<Record<string, unknown>>({})
+  const [cargando, setCargando] = useState(false)
+
+  useEffect(() => {
+    let cancelado = false
+    const unicos = Array.from(new Set(ids))
+    setMapas({})
+    if (unicos.length === 0) {
+      setCargando(false)
+      return
+    }
+
+    setCargando(true)
+    Promise.all(
+      unicos.map((id) =>
+        leerMapa(id)
+          .then((v) => ({ id, v }))
+          .catch(() => ({ id, v: undefined }))
+      )
+    ).then((res) => {
+      if (cancelado) return
+      const next: Record<string, unknown> = {}
+      for (const { id, v } of res) {
+        if (v !== undefined) next[id] = v
+      }
+      setMapas(next)
+      setCargando(false)
+    })
+
+    return () => {
+      cancelado = true
+    }
+  }, [ids])
+
+  return { mapas, cargando }
+}
+
+function TabAviso({
+  aviso,
+  mapasCargando = false,
+}: {
+  aviso: Aviso
+  mapasCargando?: boolean
+}) {
   const horas = duracionHoras(aviso.inicio_evento, aviso.fin_evento)
   const [diaId, setDiaId] = useState<string | null>(null)
 
@@ -98,7 +144,8 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
         <button
           type="button"
           onClick={descargar}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+          disabled={mapasCargando}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" aria-hidden="true" />
           Descargar PDF
@@ -288,6 +335,19 @@ export function AvisosPublicos() {
 
   const [tab, setTab] = useState<string | null>(null)
 
+  const activo = avisos.find((a) => a.id === tab) ?? avisos[0]
+
+  const mapaIds = useMemo(
+    () =>
+      activo
+        ? activo.dias
+            .map((d) => d.mapa_geojson_id)
+            .filter((id): id is string => Boolean(id))
+        : [],
+    [activo]
+  )
+  const { mapas, cargando } = useMapasVector(mapaIds)
+
   if (avisos.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -297,7 +357,6 @@ export function AvisosPublicos() {
   }
 
   const mostrandoAnteriores = tab === ANTERIORES
-  const activo = avisos.find((a) => a.id === tab) ?? avisos[0]
 
   const tabCls = (activoId: boolean) =>
     `-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
@@ -343,11 +402,11 @@ export function AvisosPublicos() {
         {mostrandoAnteriores ? (
           <TablaAnteriores avisos={avisos} onSeleccionar={(id) => setTab(id)} />
         ) : (
-          <TabAviso aviso={activo} />
+          <TabAviso aviso={activo} mapasCargando={cargando} />
         )}
       </div>
 
-      <AvisoPrint aviso={activo} />
+      <AvisoPrint aviso={activo} mapas={mapas} />
     </>
   )
 }

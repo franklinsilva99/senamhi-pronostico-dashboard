@@ -3,8 +3,15 @@
 import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
 import { fmtDateTimeISO, fmtFechaISO, fechaLargaCorta } from "@/lib/fechas"
 import type { Aviso } from "@/lib/types"
+import { AvisoMapaPrint } from "@/components/publico/aviso-mapa-print"
 
-export function AvisoPrint({ aviso }: { aviso: Aviso }) {
+export function AvisoPrint({
+  aviso,
+  mapas,
+}: {
+  aviso: Aviso
+  mapas?: Record<string, unknown>
+}) {
   const horas = duracionHoras(aviso.inicio_evento, aviso.fin_evento)
 
   return (
@@ -58,18 +65,29 @@ export function AvisoPrint({ aviso }: { aviso: Aviso }) {
             <p className="text-xs font-bold text-[#001e40]">
               {dia.fecha ? fechaLargaCorta(dia.fecha) : "—"}
             </p>
-            {dia.mapa_url ? (
-              <img
-                src={dia.mapa_url}
-                alt={`Mapa ${dia.fecha}`}
-                className="my-1 max-h-64 w-full border border-neutral-300 object-contain"
-              />
-            ) : null}
-            {dia.descripcion && (
-              <p className="whitespace-pre-line text-xs leading-snug text-[#001e40]">
-                {dia.descripcion}
-              </p>
-            )}
+            <div className="mt-2 flex items-start gap-4">
+              <div className="flex min-w-0 flex-1 justify-center">
+                {dia.mapa_url ? (
+                  <img
+                    src={dia.mapa_url}
+                    alt={`Mapa ${dia.fecha}`}
+                    className="max-h-[420px] w-auto max-w-full border border-neutral-300 object-contain"
+                  />
+                ) : dia.mapa_geojson_id && mapas?.[dia.mapa_geojson_id] ? (
+                  <AvisoMapaPrint
+                    geojson={mapas[dia.mapa_geojson_id]}
+                    maxHeight={420}
+                  />
+                ) : null}
+              </div>
+              {dia.descripcion && (
+                <div className="w-[42%] shrink-0">
+                  <p className="whitespace-pre-line text-xs leading-snug text-[#001e40]">
+                    {dia.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -10,7 +10,7 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet"
-import { PROVINCIAS, anillosDeFeature } from "@/lib/geo"
+import { DEPARTAMENTOS, anillosDepartamento } from "@/lib/geo"
 
 type GeoJSONGeometry = {
   type: string
@@ -42,8 +42,8 @@ const LEYENDA = [
   { nombre: "Nivel 4 · Rojo", color: "#dc2626" },
 ]
 
-const PERU_ANILLOS: [number, number][][] = PROVINCIAS.features.flatMap((f) =>
-  anillosDeFeature(f)
+const PERU_ANILLOS: [number, number][][] = DEPARTAMENTOS.features.flatMap((f) =>
+  anillosDepartamento(f)
 )
 
 function swapRing(ring: number[][]): [number, number][] {
