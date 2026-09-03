@@ -30,7 +30,7 @@ type Action =
   | { type: "eliminarAviso"; id: string }
   | { type: "setEstadoRonda"; id: string; estado: EstadoPublicacion }
 
-const STORAGE_KEY = "senamhi.pronostico.v7"
+const STORAGE_KEY = "senamhi.pronostico.v8"
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
