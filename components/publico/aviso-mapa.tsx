@@ -11,7 +11,11 @@ import {
   useMap,
 } from "react-leaflet"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DEPARTAMENTOS, anillosDepartamento } from "@/lib/geo"
+import {
+  DEPARTAMENTOS,
+  anillosDepartamento,
+  departamentosAfectados,
+} from "@/lib/geo"
 import { fmtFechaCompleta } from "@/lib/fechas"
 import type { Aviso } from "@/lib/types"
 
@@ -139,6 +143,8 @@ export default function AvisoMapa({
 
   const nivelInfo =
     NIVELES.find((n) => n.id === nivelActivo) ?? NIVELES[NIVELES.length - 1]
+
+  const deptos = departamentosAfectados(geojson)
 
   return (
     <div className="relative mx-auto aspect-[2/3] w-full max-w-4xl overflow-hidden rounded border border-border">
@@ -269,7 +275,9 @@ export default function AvisoMapa({
               Departamentos de posible afectación
             </p>
             <p className="text-[10px] leading-snug text-white/90">
-              {aviso?.departamentos || "—"}
+              {deptos.length > 0
+                ? deptos.join(", ")
+                : aviso?.departamentos || "—"}
             </p>
           </div>
         )}

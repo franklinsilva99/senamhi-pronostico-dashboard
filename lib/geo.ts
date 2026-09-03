@@ -98,7 +98,7 @@ function anilloPrincipal(anillos: [number, number][][]): [number, number][] {
   return mejor
 }
 
-function puntoEnAnillo(
+export function puntoEnAnillo(
   lat: number,
   lng: number,
   ring: [number, number][]
@@ -179,4 +179,102 @@ export function centroideInterior(
   if (mejor) return mejor
 
   return [(minLat + maxLat) / 2, (minLng + maxLng) / 2]
+}
+
+type BBox = [number, number, number, number]
+
+function bboxDe(ring: [number, number][]): BBox {
+  let minLat = Infinity
+  let maxLat = -Infinity
+  let minLng = Infinity
+  let maxLng = -Infinity
+  for (const [lat, lng] of ring) {
+    if (lat < minLat) minLat = lat
+    if (lat > maxLat) maxLat = lat
+    if (lng < minLng) minLng = lng
+    if (lng > maxLng) maxLng = lng
+  }
+  return [minLat, maxLat, minLng, maxLng]
+}
+
+function bboxesSuperpuestos(a: BBox, b: BBox): boolean {
+  return !(a[1] < b[0] || b[1] < a[0] || a[3] < b[2] || b[3] < a[2])
+}
+
+function swapRingLngLat(ring: number[][]): [number, number][] {
+  return ring.map(([lng, lat]) => [lat, lng] as [number, number])
+}
+
+const NIVELES_AFECTADOS = new Set(["Nivel 2", "Nivel 3", "Nivel 4"])
+
+function anillosDeGeojsonAviso(geojson: unknown): [number, number][][] {
+  const data = geojson as {
+    features?: {
+      properties?: { nivel?: unknown }
+      geometry?: { type?: string; coordinates?: unknown }
+    }[]
+  }
+  const out: [number, number][][] = []
+  for (const f of data?.features ?? []) {
+    const nivel = String(f.properties?.nivel ?? "")
+    if (!NIVELES_AFECTADOS.has(nivel)) continue
+    const g = f.geometry
+    if (!g?.coordinates) continue
+    if (g.type === "Polygon") {
+      for (const ring of g.coordinates as number[][][]) {
+        out.push(swapRingLngLat(ring))
+      }
+    } else if (g.type === "MultiPolygon") {
+      for (const poly of g.coordinates as number[][][][]) {
+        out.push(swapRingLngLat(poly[0]))
+      }
+    }
+  }
+  return out
+}
+
+export function departamentosAfectados(geojson: unknown): string[] {
+  const anillos = anillosDeGeojsonAviso(geojson)
+  if (anillos.length === 0) return []
+
+  const alertas: { ring: [number, number][]; bbox: BBox }[] = anillos.map(
+    (ring) => ({ ring, bbox: bboxDe(ring) })
+  )
+
+  const nombres: string[] = []
+
+  for (const dep of DEPARTAMENTOS.features) {
+    const depAnillos = anillosDepartamento(dep)
+    if (depAnillos.length === 0) continue
+
+    const principal = anilloPrincipal(depAnillos)
+    const depBBox = bboxDe(principal)
+    const centroide = centroideInterior(depAnillos)
+
+    let afectado = false
+
+    for (const alerta of alertas) {
+      if (!bboxesSuperpuestos(depBBox, alerta.bbox)) continue
+
+      if (puntoEnAnillo(centroide[0], centroide[1], alerta.ring)) {
+        afectado = true
+        break
+      }
+
+      const paso = Math.max(1, Math.floor(alerta.ring.length / 40))
+      for (let k = 0; k < alerta.ring.length; k += paso) {
+        const [lat, lng] = alerta.ring[k]
+        if (puntoEnAnillo(lat, lng, principal)) {
+          afectado = true
+          break
+        }
+      }
+
+      if (afectado) break
+    }
+
+    if (afectado) nombres.push(dep.properties.nombdep)
+  }
+
+  return nombres.sort()
 }
