@@ -1,12 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Download } from "lucide-react"
 import { AvisoPrint } from "@/components/publico/aviso-print"
 import { NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
+import { leerMapa } from "@/lib/aviso-mapa-db"
 import { fmtDiaMes, fmtFechaEvento, fmtFechaISO } from "@/lib/fechas"
 import { useStore } from "@/lib/store"
 import type { Aviso, NivelAviso } from "@/lib/types"
+import dynamic from "next/dynamic"
+
+const AvisoMapa = dynamic(() => import("@/components/publico/aviso-mapa"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-72 w-full items-center justify-center rounded border border-border bg-muted text-sm text-muted-foreground">
+      Cargando mapa…
+    </div>
+  ),
+})
 
 function BadgeNivel({ nivel }: { nivel: NivelAviso }) {
   return (
@@ -20,14 +31,38 @@ function BadgeNivel({ nivel }: { nivel: NivelAviso }) {
 
 const ANTERIORES = "__anteriores__"
 
+function useMapaVector(id: string | undefined): unknown | undefined {
+  const [data, setData] = useState<unknown>(undefined)
+
+  useEffect(() => {
+    let cancelado = false
+    setData(undefined)
+    if (!id) return
+    leerMapa(id)
+      .then((v) => {
+        if (!cancelado) setData(v)
+      })
+      .catch(() => {
+        if (!cancelado) setData(undefined)
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [id])
+
+  return data
+}
+
 function TabAviso({ aviso }: { aviso: Aviso }) {
   const horas = duracionHoras(aviso.inicio_evento, aviso.fin_evento)
   const [diaId, setDiaId] = useState<string | null>(null)
 
   const diaActivo =
     aviso.dias.find((d) => d.id === diaId) ??
-    aviso.dias.find((d) => d.mapa_url) ??
+    aviso.dias.find((d) => d.mapa_geojson_id || d.mapa_url) ??
     aviso.dias[0]
+
+  const mapaData = useMapaVector(diaActivo?.mapa_geojson_id)
 
   const descargar = () => window.print()
 
@@ -38,7 +73,9 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
           <span className="text-sm font-bold text-foreground">
             Aviso N° {aviso.numero || "—"}
           </span>
-          <BadgeNivel nivel={aviso.nivel} />
+          <span className={`text-sm font-bold ${NIVEL_COLOR[aviso.nivel].text}`}>
+            {aviso.nivel}
+          </span>
           <span className="rounded px-2 py-0.5 text-xs font-bold border bg-green-100 text-green-800 border-green-300">
             {aviso.estado}
           </span>
@@ -58,7 +95,7 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
           {aviso.titulo || "—"}
         </h3>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+        <div className="mt-4 space-y-1 text-sm">
           <div className="text-muted-foreground">
             <strong className="font-semibold text-foreground">Fecha de emisión:</strong>{" "}
             {fmtFechaEvento(aviso.fecha_emision)}
@@ -115,7 +152,15 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
 
             {diaActivo && (
               <div className="mt-3">
-                {diaActivo.mapa_url ? (
+                {diaActivo.mapa_geojson_id ? (
+                  mapaData ? (
+                    <AvisoMapa geojson={mapaData} />
+                  ) : (
+                    <div className="flex h-72 w-full items-center justify-center rounded border border-border bg-muted text-sm text-muted-foreground">
+                      Cargando mapa…
+                    </div>
+                  )
+                ) : diaActivo.mapa_url ? (
                   <img
                     src={diaActivo.mapa_url}
                     alt={`Mapa ${diaActivo.fecha}`}
@@ -126,7 +171,7 @@ function TabAviso({ aviso }: { aviso: Aviso }) {
                   <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
                     {diaActivo.descripcion}
                   </p>
-                ) : !diaActivo.mapa_url ? (
+                ) : !diaActivo.mapa_geojson_id && !diaActivo.mapa_url ? (
                   <div className="rounded border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
                     Sin mapa para este día.
                   </div>

@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { Plus, Save, Trash2, X } from "lucide-react"
+import shp from "shpjs"
 import { NIVELES_AVISO, NIVEL_COLOR, duracionHoras } from "@/lib/aviso"
+import { guardarMapa, eliminarMapa } from "@/lib/aviso-mapa-db"
 import { generarId } from "@/lib/utils"
 import type { Aviso, DiaAviso, NivelAviso } from "@/lib/types"
 
@@ -56,14 +58,38 @@ export function AvisoForm({
       dias: [...d.dias, { id: generarId(), fecha: "", descripcion: "", mapa_url: "" }],
     }))
 
-  const quitarDia = (index: number) =>
+  const quitarDia = (index: number) => {
+    const dia = draft.dias[index]
+    if (dia?.mapa_geojson_id) void eliminarMapa(dia.mapa_geojson_id)
     setDraft((d) => ({ ...d, dias: d.dias.filter((_, i) => i !== index) }))
+  }
 
   const onArchivo = (index: number, file: File | undefined) => {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => setDia(index, { mapa_url: String(reader.result) })
     reader.readAsDataURL(file)
+  }
+
+  const [leyendoShape, setLeyendoShape] = useState<number | null>(null)
+
+  const onShapefile = async (index: number, file: File | undefined) => {
+    if (!file) return
+    setLeyendoShape(index)
+    try {
+      const buf = await file.arrayBuffer()
+      const geojson = await shp(buf)
+      const id = generarId()
+      await guardarMapa(id, geojson)
+      setDia(index, { mapa_geojson_id: id })
+    } catch (err) {
+      window.alert(
+        "No se pudo leer el shapefile: " +
+          (err instanceof Error ? err.message : String(err))
+      )
+    } finally {
+      setLeyendoShape(null)
+    }
   }
 
   const guardar = () => {
@@ -279,6 +305,39 @@ export function AvisoForm({
                     alt="Mapa del día"
                     className="h-24 w-24 rounded border border-border object-cover"
                   />
+                )}
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Mapa vectorial (shapefile .zip)
+                  </span>
+                  <input
+                    type="file"
+                    accept=".zip"
+                    disabled={leyendoShape === i}
+                    onChange={(e) => onShapefile(i, e.target.files?.[0])}
+                    className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/80 disabled:opacity-60"
+                  />
+                </div>
+                {leyendoShape === i && (
+                  <span className="text-xs italic text-muted-foreground">
+                    Leyendo shapefile…
+                  </span>
+                )}
+                {Boolean(dia.mapa_geojson_id) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (dia.mapa_geojson_id) void eliminarMapa(dia.mapa_geojson_id)
+                      setDia(i, { mapa_geojson_id: undefined })
+                    }}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-destructive hover:underline"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Quitar mapa vectorial
+                  </button>
                 )}
               </div>
             </div>

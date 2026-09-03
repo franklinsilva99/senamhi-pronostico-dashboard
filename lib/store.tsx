@@ -128,7 +128,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (hydrated) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      } catch {
+        // quota excedida u otro error de almacenamiento: se ignora para no romper la app
+      }
     }
   }, [state, hydrated])
 

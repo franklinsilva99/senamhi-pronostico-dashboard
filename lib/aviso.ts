@@ -4,22 +4,25 @@ export const NIVELES_AVISO: NivelAviso[] = ["ROJO", "NARANJA", "AMARILLO"]
 
 export const NIVEL_COLOR: Record<
   NivelAviso,
-  { badge: string; dot: string; banner: string }
+  { badge: string; dot: string; banner: string; text: string }
 > = {
   ROJO: {
     badge: "bg-red-600 text-white border-red-700",
     dot: "bg-red-600",
     banner: "bg-red-600 text-white",
+    text: "text-red-600",
   },
   NARANJA: {
     badge: "bg-orange-500 text-white border-orange-600",
     dot: "bg-orange-500",
     banner: "bg-orange-500 text-white",
+    text: "text-orange-500",
   },
   AMARILLO: {
     badge: "bg-yellow-400 text-yellow-950 border-yellow-500",
     dot: "bg-yellow-400",
     banner: "bg-yellow-400 text-yellow-950",
+    text: "text-yellow-600",
   },
 }
 

@@ -78,6 +78,7 @@ export interface DiaAviso {
   fecha: string
   descripcion: string
   mapa_url: string
+  mapa_geojson_id?: string
 }
 
 export interface Aviso {
