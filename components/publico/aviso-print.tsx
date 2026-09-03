@@ -18,7 +18,7 @@ export function AvisoPrint({
     <div className="hidden print:block">
       {/* Encabezado */}
       <div className="flex items-start justify-between gap-4">
-        <img src="/placeholder-logo.png" alt="Logo" className="w-24" />
+        <img src="/senamhi-logo.png" alt="SENAMHI" className="h-12 w-auto" />
         <div className="flex-1 text-center">
           <p className="font-mono text-xs font-bold text-[#005cba]">
             AVISO METEOROLÓGICO N° {aviso.numero || "—"} · {aviso.codigo || ""}
@@ -32,7 +32,7 @@ export function AvisoPrint({
             NIVEL {aviso.nivel}
           </span>
         </div>
-        <img src="/placeholder-logo.png" alt="Logo" className="w-24" />
+        <img src="/senamhi-logo.png" alt="SENAMHI" className="h-12 w-auto" />
       </div>
 
       {/* Caja de vigencia */}
@@ -59,34 +59,30 @@ export function AvisoPrint({
       )}
 
       {/* Pronóstico por día */}
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 grid grid-cols-2 gap-4">
         {aviso.dias.map((dia) => (
           <div key={dia.id} className="break-inside-avoid">
             <p className="text-xs font-bold text-[#001e40]">
               {dia.fecha ? fechaLargaCorta(dia.fecha) : "—"}
             </p>
-            <div className="mt-2 flex items-start gap-4">
-              <div className="flex min-w-0 flex-1 justify-center">
-                {dia.mapa_url ? (
-                  <img
-                    src={dia.mapa_url}
-                    alt={`Mapa ${dia.fecha}`}
-                    className="max-h-[420px] w-auto max-w-full border border-neutral-300 object-contain"
-                  />
-                ) : dia.mapa_geojson_id && mapas?.[dia.mapa_geojson_id] ? (
-                  <AvisoMapaPrint
-                    geojson={mapas[dia.mapa_geojson_id]}
-                    maxHeight={420}
-                  />
-                ) : null}
-              </div>
-              {dia.descripcion && (
-                <div className="w-[42%] shrink-0">
-                  <p className="whitespace-pre-line text-xs leading-snug text-[#001e40]">
-                    {dia.descripcion}
-                  </p>
-                </div>
-              )}
+            {dia.descripcion && (
+              <p className="mt-1 whitespace-pre-line text-xs leading-snug text-[#001e40]">
+                {dia.descripcion}
+              </p>
+            )}
+            <div className="mt-2 flex justify-center">
+              {dia.mapa_url ? (
+                <img
+                  src={dia.mapa_url}
+                  alt={`Mapa ${dia.fecha}`}
+                  className="max-h-[420px] w-auto max-w-full border border-neutral-300 object-contain"
+                />
+              ) : dia.mapa_geojson_id && mapas?.[dia.mapa_geojson_id] ? (
+                <AvisoMapaPrint
+                  geojson={mapas[dia.mapa_geojson_id]}
+                  maxHeight={420}
+                />
+              ) : null}
             </div>
           </div>
         ))}

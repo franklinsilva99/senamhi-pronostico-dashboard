@@ -153,7 +153,7 @@ function TabAviso({
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-bold uppercase text-foreground">
+        <h3 className="text-center text-xl font-bold uppercase text-foreground">
           {aviso.titulo || "—"}
         </h3>
 

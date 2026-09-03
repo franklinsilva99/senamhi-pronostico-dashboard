@@ -71,7 +71,7 @@ export default function PublicoPage() {
                     Pronóstico publicado
                   </span>
                 </div>
-                <div className="relative h-[520px] overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="relative mx-auto aspect-[7/10] w-full max-w-[720px] overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                   <MapaPublicoWrapper />
                 </div>
               </>
